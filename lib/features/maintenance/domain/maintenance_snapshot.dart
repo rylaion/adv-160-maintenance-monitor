@@ -68,4 +68,3 @@ class MaintenanceSnapshot {
   final int? baselineKm;
   final DateTime? firstLogDate;
 }
-

@@ -47,15 +47,15 @@ void main() {
       o.items.firstWhere((i) => i.item.name == name);
 
   group('Honda schedule seed', () {
-    test('seeds manufacturer rules as unverified candidates', () async {
+    test('seeds manufacturer rules as verified from 32K0WA100 pp. 88-89',
+        () async {
       final rules = await db.select(db.maintenanceRules).get();
-      expect(rules, hasLength(6));
+      expect(rules, hasLength(28));
       for (final r in rules) {
         expect(r.source, MaintenanceSource.hondaManual.code);
         expect(r.sourceDocument, contains('32K0WA100'));
-        expect(r.isVerified, isFalse);
-        expect(r.sourcePage, isNull);
-        expect(r.notes, contains('UNVERIFIED'));
+        expect(r.isVerified, isTrue);
+        expect(r.sourcePage, isIn([88, 89]));
         expect(r.motorcycleId, bikeId);
       }
     });
@@ -74,9 +74,9 @@ void main() {
       ]);
     });
 
-    test('CVT belt: separate inspect and replace rules', () async {
+    test('Drive Belt: separate inspect and replace rules', () async {
       final rules = (await db.select(db.maintenanceRules).get())
-          .where((r) => r.itemId == itemIds['CVT Drive Belt'])
+          .where((r) => r.itemId == itemIds['Drive Belt'])
           .toList();
       expect(rules, hasLength(2));
       final inspect = rules.firstWhere((r) => r.actionCode == 'I');
@@ -87,60 +87,56 @@ void main() {
                   .get())
               .map((s) => s.atKm)
               .toList();
-      expect(await kms(inspect.id), [18000, 36000]);
-      expect(await kms(replace.id), [30000]);
+      expect(await kms(inspect.id), [12000, 36000]);
+      expect(await kms(replace.id), [24000]);
     });
 
     test('date-based replacements', () async {
       final rules = await db.select(db.maintenanceRules).get();
-      int? months(String item) =>
-          rules.firstWhere((r) => r.itemId == itemIds[item]).intervalMonths;
+      int? months(String item) => rules
+          .firstWhere((r) => r.itemId == itemIds[item] && r.ruleType == 'DATE')
+          .intervalMonths;
       expect(months('Brake Fluid'), 24);
-      expect(months('Coolant'), 36);
+      expect(months('Radiator Coolant'), 36);
       expect(months('Final Drive Oil'), 24);
     });
 
-    test('no invented intervals: fuel filter and others have no rule',
+    test(
+        'no invented intervals: fuel filter and pre-ride lights/horn have no rule',
         () async {
       final ruled = (await db.select(db.maintenanceRules).get())
           .map((r) => r.itemId)
           .toSet();
-      for (final name in [
-        'Fuel Filter',
-        'Fuel Line',
-        'Brake Pads',
-        'Battery',
-        'Tire'
-      ]) {
+      for (final name in ['Fuel Filter', 'Lights/Horn']) {
         expect(ruled, isNot(contains(itemIds[name])), reason: name);
       }
     });
 
     test('seed is idempotent', () async {
       await HondaScheduleSeed(db).run();
-      expect(await db.select(db.maintenanceRules).get(), hasLength(6));
+      expect(await db.select(db.maintenanceRules).get(), hasLength(28));
     });
   });
 
-  group('migration v1 -> v2', () {
+  group('migration v1 -> v2 and v3 -> v4', () {
     test('adds the schedule to a v1 database and is repeatable', () async {
       await db.delete(db.maintenanceRuleSteps).go();
       await db.delete(db.maintenanceRules).go();
       expect(await db.select(db.maintenanceRules).get(), isEmpty);
 
       await runMigrations(db, db.createMigrator(), 1, 2);
-      expect(await db.select(db.maintenanceRules).get(), hasLength(6));
-      expect(await db.select(db.maintenanceRuleSteps).get(), hasLength(5));
+      expect(await db.select(db.maintenanceRules).get(), hasLength(28));
+      expect(await db.select(db.maintenanceRuleSteps).get(), hasLength(50));
 
       await runMigrations(db, db.createMigrator(), 1, 2);
-      expect(await db.select(db.maintenanceRules).get(), hasLength(6));
+      expect(await db.select(db.maintenanceRules).get(), hasLength(28));
     });
 
     test('no-op when already current; downgrade is rejected', () async {
-      await runMigrations(db, db.createMigrator(), 2, 2);
-      expect(await db.select(db.maintenanceRules).get(), hasLength(6));
+      await runMigrations(db, db.createMigrator(), 4, 4);
+      expect(await db.select(db.maintenanceRules).get(), hasLength(28));
       expect(
-          () => runMigrations(db, db.createMigrator(), 3, 2), throwsStateError);
+          () => runMigrations(db, db.createMigrator(), 4, 3), throwsStateError);
     });
 
     test('preserves existing history', () async {
@@ -151,7 +147,7 @@ void main() {
         date: day,
         odometerKm: 1000,
       ));
-      await runMigrations(db, db.createMigrator(), 1, 2);
+      await runMigrations(db, db.createMigrator(), 1, 4);
       expect(await db.select(db.maintenanceRecords).get(), hasLength(1));
       expect(await db.select(db.odometerLogs).get(), hasLength(1));
     });
@@ -390,7 +386,7 @@ void main() {
       );
 
       final rows = await db.select(db.maintenanceRules).get();
-      expect(rows.where((r) => r.source == 'HONDA_MANUAL'), hasLength(6));
+      expect(rows.where((r) => r.source == 'HONDA_MANUAL'), hasLength(28));
       expect(rows.where((r) => r.source == 'CUSTOM'), hasLength(1));
 
       final o = await overview();
@@ -411,24 +407,31 @@ void main() {
       o = await overview();
       expect(o.currentKm, 500);
       expect(o.trackedKm, 0);
-      expect(o.scheduled.length, 5);
+      expect(o.scheduled.length, 23);
       expect(o.unscheduled.map((i) => i.item.name).toSet(),
-          {'Fuel Filter', 'Fuel Line', 'Brake Pads', 'Battery', 'Tire'});
+          {'Fuel Filter', 'Lights/Horn'});
 
       final oil = item(o, 'Engine Oil').evaluation;
       expect(oil.status, MaintenanceStatus.upcoming);
       expect(oil.next!.remainingKm, 500);
-      expect(item(o, 'CVT Drive Belt').evaluation.next!.next!.dueKm, 18000);
+      expect(item(o, 'Drive Belt').evaluation.next!.next!.dueKm, 12000);
 
       // Date-based rules count from the first odometer date (no purchase date).
       final bf = item(o, 'Brake Fluid').evaluation;
-      expect(bf.next!.next!.dueDate, DateTime.utc(2028, 11, 9));
+      final bfDateRule = bf.ruleEvaluations
+          .firstWhere((r) => r.rule.ruleType == RuleType.date);
+      expect(bfDateRule.next!.dueDate, DateTime.utc(2028, 11, 9));
       expect(bf.status, MaintenanceStatus.good);
 
-      expect(o.statusCounts[MaintenanceStatus.upcoming.code], 1);
-      expect(o.statusCounts[MaintenanceStatus.good.code], 4);
+      expect(o.statusCounts[MaintenanceStatus.upcoming.code], 4);
+      expect(o.statusCounts[MaintenanceStatus.good.code], 19);
       expect(o.overdue, isEmpty);
-      expect(o.dueSoon.single.item.name, 'Engine Oil');
+      expect(o.dueSoon.map((i) => i.item.name).toSet(), {
+        'Engine Oil',
+        'Engine Idle Speed',
+        'Brake System',
+        'Nuts, Bolts, Fasteners',
+      });
     });
 
     test('purchase date drives date-based rules', () async {
@@ -438,22 +441,25 @@ void main() {
       await odo.record(motorcycleId: bikeId, readingKm: 20000, date: day);
       final o = await overview();
       final bf = item(o, 'Brake Fluid').evaluation;
-      expect(bf.next!.next!.dueDate, DateTime.utc(2025, 6, 15));
+      final bfDateRule = bf.ruleEvaluations
+          .firstWhere((r) => r.rule.ruleType == RuleType.date);
+      expect(bfDateRule.next!.dueDate, DateTime.utc(2025, 6, 15));
       expect(bf.status, MaintenanceStatus.overdue);
-      final coolant = item(o, 'Coolant').evaluation;
-      expect(coolant.next!.next!.dueDate, DateTime.utc(2026, 6, 15));
+      final coolant = item(o, 'Radiator Coolant').evaluation;
+      final coolantDateRule = coolant.ruleEvaluations
+          .firstWhere((r) => r.rule.ruleType == RuleType.date);
+      expect(coolantDateRule.next!.dueDate, DateTime.utc(2026, 6, 15));
       expect(o.overdue.map((i) => i.item.name),
-          containsAll(['Brake Fluid', 'Coolant', 'Final Drive Oil']));
+          containsAll(['Brake Fluid', 'Radiator Coolant', 'Final Drive Oil']));
     });
 
-    test('checkpoints before the first reading are reported, not missed',
+    test('checkpoints before the first reading remain overdue until completed',
         () async {
       await odo.record(motorcycleId: bikeId, readingKm: 8000, date: day);
       final o = await overview();
       final oil = item(o, 'Engine Oil').evaluation;
-      expect(oil.skippedBeforeTracking, 2);
-      expect(oil.next!.next!.dueKm, 12000);
-      expect(o.skippedBeforeTracking, 2);
+      expect(oil.status, MaintenanceStatus.overdue);
+      expect(oil.next!.next!.dueKm, 1000);
     });
 
     test('watchSnapshot re-emits after an odometer update', () async {

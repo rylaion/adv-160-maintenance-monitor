@@ -3,28 +3,65 @@ import 'package:drift/drift.dart';
 import '../../constants/app_constants.dart';
 import '../app_database.dart';
 
-/// Seeds first-run data only: the motorcycle, categories and items.
-///
-/// Maintenance rules (manual schedule) are intentionally NOT seeded here;
-/// they require verification against Honda document 32K0WA100 (Phase 2).
-/// Item instructions are left empty so no specification is invented.
+/// Seeds first-run data: the motorcycle, the 8 maintenance categories, and all
+/// 25 maintenance items (24 official 2023 Honda ADV160 Owner's Manual items
+/// plus the user-defined `Fuel Filter` item).
 class InitialSeed {
   InitialSeed(this.db);
   final AppDatabase db;
 
-  /// Category name -> item names (ordered).
+  static const String fuelFilterCustomLabel =
+      'User-defined maintenance task (not a Honda-prescribed interval in '
+      '2023 Honda ADV160 Owner\'s Manual 32K0WA100; the official schedule '
+      'lists Fuel Line inspection only).';
+
+  /// Category name -> item names (ordered per Section 6).
   static const Map<String, List<String>> categoryItems = {
-    'Engine': ['Engine Oil'],
-    'CVT': ['CVT Drive Belt'],
-    'Fuel System': ['Fuel Filter', 'Fuel Line'],
-    'Brakes': ['Brake Pads', 'Brake Fluid'],
-    'Electrical': ['Battery'],
-    'Tires and Wheels': ['Tire'],
-    'Cooling System': ['Coolant'],
-    'Final Drive': ['Final Drive Oil'],
+    'Engine': [
+      'Engine Oil',
+      'Engine Oil Strainer Screen',
+      'Spark Plug',
+      'Valve Clearance',
+      'Engine Idle Speed',
+      'Crankcase Breather',
+    ],
+    'Fuel System': [
+      'Fuel Line',
+      'Air Cleaner',
+      'Throttle Operation',
+      'Fuel Filter',
+    ],
+    'CVT / Transmission': [
+      'Drive Belt',
+      'Clutch Shoes Wear',
+      'Final Drive Oil',
+    ],
+    'Braking System': [
+      'Brake Fluid',
+      'Brake Pads Wear',
+      'Brake System',
+    ],
+    'Cooling System': [
+      'Radiator Coolant',
+      'Cooling System',
+    ],
+    'Electrical / Battery': [
+      'Battery',
+      'Headlight Aim',
+      'Lights/Horn',
+    ],
+    'Tires / Wheels': [
+      'Wheels/Tyres',
+    ],
+    'Chassis / Suspension': [
+      'Side Stand',
+      'Suspension',
+      'Nuts, Bolts, Fasteners',
+      'Steering Head Bearings',
+    ],
   };
 
-  /// Idempotent: safe to call more than once.
+  /// Idempotent: safe to call more than once. Preserves existing item IDs.
   Future<void> run() async {
     await db.transaction(() async {
       final now = DateTime.now().toIso8601String();
@@ -54,16 +91,37 @@ class InitialSeed {
         final category = await (db.select(db.maintenanceCategories)
               ..where((c) => c.name.equals(entry.key)))
             .getSingle();
+        await (db.update(db.maintenanceCategories)
+              ..where((c) => c.id.equals(category.id)))
+            .write(MaintenanceCategoriesCompanion(
+                sortOrder: Value(categoryOrder)));
+
         for (final itemName in entry.value) {
           itemOrder++;
+          final defaultInstructions =
+              itemName == 'Fuel Filter' ? fuelFilterCustomLabel : null;
           await db.into(db.maintenanceItems).insert(
                 MaintenanceItemsCompanion.insert(
                   categoryId: category.id,
                   name: itemName,
+                  instructions: Value(defaultInstructions),
                   sortOrder: Value(itemOrder),
                 ),
                 mode: InsertMode.insertOrIgnore,
               );
+          final existingItem = await (db.select(db.maintenanceItems)
+                ..where((i) => i.name.equals(itemName)))
+              .getSingle();
+          await (db.update(db.maintenanceItems)
+                ..where((i) => i.id.equals(existingItem.id)))
+              .write(MaintenanceItemsCompanion(
+            categoryId: Value(category.id),
+            sortOrder: Value(itemOrder),
+            instructions:
+                existingItem.instructions == null && defaultInstructions != null
+                    ? const Value(fuelFilterCustomLabel)
+                    : const Value.absent(),
+          ));
         }
       }
     });

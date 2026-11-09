@@ -83,4 +83,3 @@ class AttachmentService {
         _ => null,
       };
 }
-

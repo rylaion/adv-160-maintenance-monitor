@@ -6,7 +6,7 @@ const String kDatabaseFileName = 'adv_mon.sqlite';
 
 /// Increment when the schema changes and add a step in
 /// `core/database/migrations/migrations.dart`.
-const int kDatabaseSchemaVersion = 3;
+const int kDatabaseSchemaVersion = 4;
 
 /// Local time zone used for display and reminder scheduling.
 const String kAppTimeZone = 'Asia/Manila';
@@ -15,4 +15,3 @@ const String kAppTimeZone = 'Asia/Manila';
 const String kSeedBrand = 'Honda';
 const String kSeedModel = 'ADV 160';
 const int kSeedModelYear = 2023;
-

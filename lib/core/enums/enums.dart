@@ -15,8 +15,9 @@ enum MaintenanceSource {
       orElse: () => throw ArgumentError('Unknown MaintenanceSource: $code'));
 }
 
-/// Computed maintenance status for an item.
+/// Computed maintenance status for an item or scheduled checkpoint.
 enum MaintenanceStatus {
+  completed('COMPLETED'),
   good('GOOD'),
   upcoming('UPCOMING'),
   due('DUE'),
@@ -125,6 +126,7 @@ enum ReminderStatus {
 /// Ordering used to pick the "worst" status of an item.
 extension MaintenanceStatusSeverity on MaintenanceStatus {
   int get severity => switch (this) {
+        MaintenanceStatus.completed => 0,
         MaintenanceStatus.good => 0,
         MaintenanceStatus.upcoming => 1,
         MaintenanceStatus.due => 2,
@@ -134,6 +136,7 @@ extension MaintenanceStatusSeverity on MaintenanceStatus {
       };
 
   String get label => switch (this) {
+        MaintenanceStatus.completed => 'Completed',
         MaintenanceStatus.good => 'Good',
         MaintenanceStatus.upcoming => 'Upcoming',
         MaintenanceStatus.due => 'Due',
@@ -144,14 +147,23 @@ extension MaintenanceStatusSeverity on MaintenanceStatus {
 }
 
 /// Which logged actions satisfy a Honda action code.
-/// Replacement also covers inspection and cleaning of the same part.
+/// Per Honda Owner's Manual (32K0WA100, p. 88), I = Inspect (clean, adjust,
+/// lubricate, or replace, if necessary). Replacement also covers inspection and
+/// cleaning of the same part.
 extension ActionCodeSatisfaction on ActionCode {
   bool isSatisfiedBy(MaintenanceAction action) => switch (this) {
         ActionCode.inspect => action == MaintenanceAction.inspection ||
+            action == MaintenanceAction.adjustment ||
             action == MaintenanceAction.replacement,
         ActionCode.clean => action == MaintenanceAction.cleaning ||
             action == MaintenanceAction.replacement,
         ActionCode.replace => action == MaintenanceAction.replacement,
+      };
+
+  MaintenanceAction get defaultMaintenanceAction => switch (this) {
+        ActionCode.inspect => MaintenanceAction.inspection,
+        ActionCode.replace => MaintenanceAction.replacement,
+        ActionCode.clean => MaintenanceAction.cleaning,
       };
 
   String get label => switch (this) {

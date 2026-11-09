@@ -37,8 +37,7 @@ class PartsRepository {
   }
 
   Stream<List<PartInfo>> watchParts() {
-    final q = _db.select(_db.parts)
-      ..orderBy([(t) => OrderingTerm.desc(t.id)]);
+    final q = _db.select(_db.parts)..orderBy([(t) => OrderingTerm.desc(t.id)]);
     return q.watch().map((rows) => rows.map(_part).toList());
   }
 
@@ -61,7 +60,8 @@ class PartsRepository {
     if (p.purchasePriceCentavos < 0) {
       throw const PartsException('Price cannot be negative.');
     }
-    final pd = p.purchaseDate == null ? null : AppDates.dateOnly(p.purchaseDate!);
+    final pd =
+        p.purchaseDate == null ? null : AppDates.dateOnly(p.purchaseDate!);
     if (pd != null && pd.isAfter(_today)) {
       throw const PartsException('Purchase date cannot be in the future.');
     }
@@ -69,7 +69,9 @@ class PartsRepository {
       final item = await (_db.select(_db.maintenanceItems)
             ..where((t) => t.id.equals(p.itemId!)))
           .getSingleOrNull();
-      if (item == null) throw const PartsException('Maintenance item not found.');
+      if (item == null) {
+        throw const PartsException('Maintenance item not found.');
+      }
     }
     return _db.into(_db.parts).insert(PartsCompanion.insert(
           itemId: Value(p.itemId),
@@ -97,7 +99,8 @@ class PartsRepository {
 
   Future<List<InstallationInfo>> loadInstallations({int? itemId}) async {
     final q = _db.select(_db.partInstallations).join([
-      innerJoin(_db.parts, _db.parts.id.equalsExp(_db.partInstallations.partId)),
+      innerJoin(
+          _db.parts, _db.parts.id.equalsExp(_db.partInstallations.partId)),
       leftOuterJoin(_db.maintenanceItems,
           _db.maintenanceItems.id.equalsExp(_db.parts.itemId)),
     ]);
@@ -141,7 +144,8 @@ class PartsRepository {
         throw const PartsException('Odometer cannot be negative.');
       }
       if (day.isAfter(_today)) {
-        throw const PartsException('Installation date cannot be in the future.');
+        throw const PartsException(
+            'Installation date cannot be in the future.');
       }
       final part = await findPart(partId);
       if (part == null) throw const PartsException('Part not found.');
@@ -218,4 +222,3 @@ class PartsRepository {
             ..where((t) => t.recordId.equals(fromRecordId)))
           .write(PartInstallationsCompanion(recordId: Value(toRecordId)));
 }
-

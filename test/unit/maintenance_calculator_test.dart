@@ -83,7 +83,7 @@ void main() {
       expect(e.next!.actionCode, ActionCode.replace);
       expect(e.remainingKm, 1000);
       expect(e.remainingDays, isNull);
-      expect(e.status, MaintenanceStatus.upcoming);
+      expect(e.status, MaintenanceStatus.good);
     });
 
     test('remaining kilometers shrink as odometer rises', () {
@@ -91,10 +91,12 @@ void main() {
       expect(evalRule(oil, km: 950).remainingKm, 50);
     });
 
-    test('status thresholds: upcoming, due, overdue', () {
-      expect(evalRule(oil, km: 0).status, MaintenanceStatus.upcoming); // 1000
-      expect(evalRule(oil, km: 899).status, MaintenanceStatus.upcoming); // 101
-      expect(evalRule(oil, km: 900).status, MaintenanceStatus.due); // 100
+    test(
+        'status thresholds: upcoming (<= 500 km), due (0 km), overdue (< 0 km)',
+        () {
+      expect(evalRule(oil, km: 499).status, MaintenanceStatus.good); // 501
+      expect(evalRule(oil, km: 500).status, MaintenanceStatus.upcoming); // 500
+      expect(evalRule(oil, km: 999).status, MaintenanceStatus.upcoming); // 1
       expect(evalRule(oil, km: 1000).status, MaintenanceStatus.due); // 0
       expect(evalRule(oil, km: 1001).status, MaintenanceStatus.overdue); // -1
     });
@@ -172,12 +174,12 @@ void main() {
     });
 
     test('service earlier than the tolerance does not satisfy it', () {
-      final tooEarly = evalRule(oil, km: 5000, events: [
+      final tooEarly = evalRule(oil, km: 5500, events: [
         ev(MaintenanceAction.replacement, 1000),
         ev(MaintenanceAction.replacement, 4999),
       ]);
       expect(tooEarly.next!.dueKm, 6000);
-      expect(tooEarly.remainingKm, 1000);
+      expect(tooEarly.remainingKm, 500);
       expect(tooEarly.status, MaintenanceStatus.upcoming);
     });
 
@@ -400,9 +402,9 @@ void main() {
         intervalKm: 3000,
       );
       final e = evalRule(everyThree,
-          km: 3900, events: [ev(MaintenanceAction.replacement, 1000)]);
+          km: 4000, events: [ev(MaintenanceAction.replacement, 1000)]);
       expect(e.next!.dueKm, 4000);
-      expect(e.remainingKm, 100);
+      expect(e.remainingKm, 0);
       expect(e.status, MaintenanceStatus.due);
     });
 
@@ -460,8 +462,10 @@ void main() {
   });
 
   group('first tracked reading', () {
-    test('checkpoints before it are skipped, not missed', () {
-      final e = evalRule(oil, km: 8000, baselineKm: 8000);
+    test('checkpoints before it are skipped when skipBeforeBaseline is enabled',
+        () {
+      const skipCalc = MaintenanceCalculator(skipBeforeBaseline: true);
+      final e = evalRule(oil, km: 8000, baselineKm: 8000, c: skipCalc);
       expect(e.skippedBeforeTracking, 2);
       expect(e.next!.dueKm, 12000);
       expect(e.remainingKm, 4000);
@@ -500,7 +504,7 @@ void main() {
         itemId: 1,
         rules: [oil, customOil],
         events: events,
-        currentKm: 3900,
+        currentKm: 4000,
         today: today,
         baselineKm: 0,
       );
@@ -521,7 +525,7 @@ void main() {
         itemId: 1,
         rules: [oil],
         events: events,
-        currentKm: 3900,
+        currentKm: 4000,
         today: today,
         baselineKm: 0,
       );

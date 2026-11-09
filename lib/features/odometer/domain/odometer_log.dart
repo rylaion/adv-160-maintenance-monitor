@@ -49,5 +49,3 @@ class OdometerException implements UserFacingException {
   @override
   String toString() => message;
 }
-
-

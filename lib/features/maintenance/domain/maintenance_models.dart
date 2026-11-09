@@ -74,12 +74,15 @@ class ServiceEvent {
 }
 
 /// Thresholds that turn "remaining" into a status. These are app notification
-/// policy, NOT Honda specifications.
+/// policy (configurable in Settings), NOT Honda specifications.
+///
+/// Default warning distance is 500 km (`upcomingKm = 500`) and exact checkpoint
+/// reached is `dueKm = 0`.
 class MaintenanceThresholds {
   const MaintenanceThresholds({
-    this.dueKm = 100,
+    this.dueKm = 0,
     this.dueDays = 7,
-    this.upcomingKm = 1000,
+    this.upcomingKm = 500,
     this.upcomingDays = 30,
   });
 
@@ -114,6 +117,28 @@ class Checkpoint {
   final int sequence;
 }
 
+/// Computed evaluation of a single scheduled checkpoint (e.g. Fuel Line Inspect
+/// at 12,000 km).
+class CheckpointEvaluation {
+  const CheckpointEvaluation({
+    required this.rule,
+    required this.checkpoint,
+    required this.status,
+    this.remainingKm,
+    this.remainingDays,
+    this.completedBy,
+  });
+
+  final RuleDef rule;
+  final Checkpoint checkpoint;
+  final MaintenanceStatus status;
+  final int? remainingKm;
+  final int? remainingDays;
+  final ServiceEvent? completedBy;
+
+  bool get isCompleted => status == MaintenanceStatus.completed;
+}
+
 /// Result of evaluating one rule.
 class RuleEvaluation {
   const RuleEvaluation({
@@ -126,6 +151,7 @@ class RuleEvaluation {
     this.lastService,
     this.skippedBeforeTracking = 0,
     this.missingBaseline = false,
+    this.checkpoints = const [],
   });
 
   final RuleDef rule;
@@ -147,6 +173,20 @@ class RuleEvaluation {
 
   /// A date limit could not be computed because no baseline date exists.
   final bool missingBaseline;
+
+  /// Individual checkpoint evaluations for the Odometer-Based Inspection Guide.
+  final List<CheckpointEvaluation> checkpoints;
+
+  /// Any checkpoint at or above the current odometer that is UPCOMING, even if
+  /// an earlier checkpoint was skipped and remains OVERDUE.
+  CheckpointEvaluation? get upcomingCheckpoint => checkpoints
+      .where((c) => c.status == MaintenanceStatus.upcoming)
+      .firstOrNull;
+
+  /// Most recently completed checkpoint for this rule.
+  CheckpointEvaluation? get lastCompletedCheckpoint => checkpoints
+      .where((c) => c.status == MaintenanceStatus.completed)
+      .lastOrNull;
 }
 
 /// Combined result for one maintenance item.
@@ -176,5 +216,23 @@ class ItemEvaluation {
   final ServiceEvent? lastService;
   final bool needsBaseline;
   final int skippedBeforeTracking;
-}
 
+  /// All scheduled checkpoints across all active rules of this item, ordered by
+  /// mileage / date.
+  List<CheckpointEvaluation> get checkpoints {
+    final list = [
+      for (final r in ruleEvaluations) ...r.checkpoints,
+    ];
+    list.sort((a, b) {
+      final k = (a.checkpoint.dueKm ?? 1 << 30)
+          .compareTo(b.checkpoint.dueKm ?? 1 << 30);
+      if (k != 0) return k;
+      return a.checkpoint.sequence.compareTo(b.checkpoint.sequence);
+    });
+    return list;
+  }
+
+  /// True when a maintenance record confirms that a scheduled task for this
+  /// item was completed.
+  bool get hasCompletedRecord => lastService != null;
+}

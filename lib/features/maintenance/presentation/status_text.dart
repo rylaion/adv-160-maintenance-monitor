@@ -63,4 +63,3 @@ class StatusText {
   /// Formats integer centavos as pesos.
   static String pesos(int centavos) => _peso.format(centavos / 100);
 }
-

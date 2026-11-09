@@ -9,16 +9,37 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../maintenance/domain/maintenance_overview.dart';
 import '../../maintenance/presentation/maintenance_view_model.dart';
 import '../../maintenance/presentation/status_text.dart';
+import '../../reminders/presentation/reminders_view_model.dart';
 
 /// Dashboard driven entirely by stored data and the calculation engine.
+///
+/// Displays:
+/// - Motorcycle & odometer summary
+/// - Next major maintenance checkpoint
+/// - Maintenance inspection summary (Overdue, Due, Upcoming, Recently completed)
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(maintenanceOverviewProvider);
+    final remindersCount =
+        ref.watch(activeRemindersProvider).valueOrNull?.length ?? 0;
     return Scaffold(
-      appBar: AppBar(title: const Text('ADV-MON')),
+      appBar: AppBar(
+        title: const Text('ADV-MON'),
+        actions: [
+          IconButton(
+            tooltip: 'Reminders ($remindersCount)',
+            icon: Badge(
+              isLabelVisible: remindersCount > 0,
+              label: Text('$remindersCount'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            onPressed: () => context.push('/reminders'),
+          ),
+        ],
+      ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Could not load data: $e')),
@@ -39,6 +60,9 @@ class _Body extends StatelessWidget {
     final bike = o.snapshot.motorcycle;
     final last = o.lastRecord;
     final lastItem = last == null ? null : o.itemById(last.itemId);
+    final nextMajorKm = o.nextMajorCheckpointKm;
+    final nextMajorTasks = o.nextMajorCheckpointTasks;
+    final recentRecords = o.recentRecords.take(5).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -93,10 +117,36 @@ class _Body extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: () => context.push('/odometer'),
-          icon: const Icon(Icons.speed),
-          label: const Text('Update Odometer'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              onPressed: () => context.push('/odometer'),
+              icon: const Icon(Icons.speed),
+              label: const Text('Update Odometer'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => context.push('/maintenance/record'),
+              icon: const Icon(Icons.add_task),
+              label: const Text('Add Maintenance'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.go('/maintenance'),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: const Text('Inspection Guide'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.go('/components'),
+              icon: const Icon(Icons.straighten),
+              label: const Text('Record Measurement'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/maintenance/history'),
+              icon: const Icon(Icons.history),
+              label: const Text('View Maintenance History'),
+            ),
+          ],
         ),
         if (o.currentKm == null)
           const _Hint('Enter your current odometer reading so mileage-based '
@@ -104,26 +154,69 @@ class _Body extends StatelessWidget {
         if (o.needsBaseline)
           const _Hint('Set the purchase date in the motorcycle profile to '
               'enable date-based schedules.'),
-        if (o.skippedBeforeTracking > 0)
-          _Hint('${o.skippedBeforeTracking} manufacturer checkpoint(s) before '
-              'your first odometer entry are not counted as missed. Record past '
-              'services to confirm them.'),
         const SizedBox(height: 16),
-        Text('Status summary', style: theme.textTheme.titleMedium),
+        if (nextMajorKm != null)
+          _NextMajorCheckpointCard(
+            checkpointKm: nextMajorKm,
+            currentKm: o.currentKm,
+            tasks: nextMajorTasks,
+          ),
+        const SizedBox(height: 16),
+        Text('Maintenance inspection summary',
+            style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         _Summary(counts: o.statusCounts, unscheduled: o.unscheduled.length),
         if (o.overdue.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Overdue', style: theme.textTheme.titleMedium),
+          Text('Overdue maintenance (${o.overdue.length})',
+              style: theme.textTheme.titleMedium),
           ...o.overdue
               .map((i) => ItemStatusCard(status: i, showCategory: true)),
         ],
-        if (o.dueSoon.isNotEmpty) ...[
+        if (o.due.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Upcoming', style: theme.textTheme.titleMedium),
-          ...o.dueSoon
+          Text('Due maintenance (${o.due.length})',
+              style: theme.textTheme.titleMedium),
+          ...o.due.map((i) => ItemStatusCard(status: i, showCategory: true)),
+        ],
+        if (o.upcoming.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Upcoming maintenance (${o.upcoming.length})',
+              style: theme.textTheme.titleMedium),
+          ...o.upcoming
               .map((i) => ItemStatusCard(status: i, showCategory: true)),
         ],
+        const SizedBox(height: 16),
+        Text('Recently completed maintenance',
+            style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        if (recentRecords.isEmpty)
+          const Card(
+            child: ListTile(
+              leading: Icon(Icons.task_alt_outlined),
+              title: Text('No completed maintenance recorded yet'),
+              subtitle: Text(
+                  'Log a completed service to track completed checkpoints.'),
+            ),
+          )
+        else
+          Card(
+            child: Column(
+              children: [
+                for (final r in recentRecords)
+                  ListTile(
+                    leading: const Icon(Icons.task_alt),
+                    title: Text(o.itemById(r.itemId)?.name ?? 'Item'),
+                    subtitle: Text(
+                      '${r.action.code} · ${AppDates.formatDate(r.date)} '
+                      'at ${StatusText.km(r.odometerKm)}',
+                    ),
+                    trailing:
+                        const StatusChip(status: MaintenanceStatus.completed),
+                  ),
+              ],
+            ),
+          ),
         const SizedBox(height: 16),
         Card(
           child: Column(children: [
@@ -143,6 +236,67 @@ class _Body extends StatelessWidget {
           ]),
         ),
       ],
+    );
+  }
+}
+
+class _NextMajorCheckpointCard extends StatelessWidget {
+  const _NextMajorCheckpointCard({
+    required this.checkpointKm,
+    required this.currentKm,
+    required this.tasks,
+  });
+
+  final int checkpointKm;
+  final int? currentKm;
+  final List<ScheduledTaskStatus> tasks;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rem = currentKm == null ? null : checkpointKm - currentKm!;
+    final inspectCount =
+        tasks.where((t) => t.actionCode == ActionCode.inspect).length;
+    final replaceCount =
+        tasks.where((t) => t.actionCode == ActionCode.replace).length;
+    final cleanCount =
+        tasks.where((t) => t.actionCode == ActionCode.clean).length;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.flag_outlined),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Next major maintenance checkpoint',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              rem == null
+                  ? StatusText.km(checkpointKm)
+                  : '${StatusText.km(checkpointKm)} (${StatusText.remainingKm(rem)})',
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${tasks.length} scheduled item(s): '
+              '$inspectCount Inspect (I) · $replaceCount Replace (R) · '
+              '$cleanCount Clean (C)',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

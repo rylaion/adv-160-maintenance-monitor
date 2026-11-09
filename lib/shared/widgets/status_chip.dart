@@ -11,6 +11,8 @@ class StatusStyle {
   final IconData icon;
 
   static StatusStyle of(MaintenanceStatus s) => switch (s) {
+        MaintenanceStatus.completed =>
+          const StatusStyle(StatusColors.good, Icons.task_alt),
         MaintenanceStatus.good =>
           const StatusStyle(StatusColors.good, Icons.check_circle_outline),
         MaintenanceStatus.upcoming =>

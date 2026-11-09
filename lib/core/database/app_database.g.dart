@@ -2376,6 +2376,15 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
   late final GeneratedColumn<String> voidedAt = GeneratedColumn<String>(
       'voided_at', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supersedesRecordIdMeta =
+      const VerificationMeta('supersedesRecordId');
+  @override
+  late final GeneratedColumn<int> supersedesRecordId = GeneratedColumn<int>(
+      'supersedes_record_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES maintenance_records (id)'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -2395,6 +2404,7 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
         serviceProvider,
         notes,
         voidedAt,
+        supersedesRecordId,
         createdAt
       ];
   @override
@@ -2473,6 +2483,12 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
       context.handle(_voidedAtMeta,
           voidedAt.isAcceptableOrUnknown(data['voided_at']!, _voidedAtMeta));
     }
+    if (data.containsKey('supersedes_record_id')) {
+      context.handle(
+          _supersedesRecordIdMeta,
+          supersedesRecordId.isAcceptableOrUnknown(
+              data['supersedes_record_id']!, _supersedesRecordIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -2510,6 +2526,8 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
       voidedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}voided_at']),
+      supersedesRecordId: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}supersedes_record_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}created_at'])!,
     );
@@ -2536,6 +2554,10 @@ class MaintenanceRecordRow extends DataClass
   final String? serviceProvider;
   final String? notes;
   final String? voidedAt;
+
+  /// When this record is an edited version, the record it replaces. The old
+  /// record is kept (voided) so history is never overwritten.
+  final int? supersedesRecordId;
   final String createdAt;
   const MaintenanceRecordRow(
       {required this.id,
@@ -2549,6 +2571,7 @@ class MaintenanceRecordRow extends DataClass
       this.serviceProvider,
       this.notes,
       this.voidedAt,
+      this.supersedesRecordId,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2569,6 +2592,9 @@ class MaintenanceRecordRow extends DataClass
     }
     if (!nullToAbsent || voidedAt != null) {
       map['voided_at'] = Variable<String>(voidedAt);
+    }
+    if (!nullToAbsent || supersedesRecordId != null) {
+      map['supersedes_record_id'] = Variable<int>(supersedesRecordId);
     }
     map['created_at'] = Variable<String>(createdAt);
     return map;
@@ -2592,6 +2618,9 @@ class MaintenanceRecordRow extends DataClass
       voidedAt: voidedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(voidedAt),
+      supersedesRecordId: supersedesRecordId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supersedesRecordId),
       createdAt: Value(createdAt),
     );
   }
@@ -2611,6 +2640,7 @@ class MaintenanceRecordRow extends DataClass
       serviceProvider: serializer.fromJson<String?>(json['serviceProvider']),
       notes: serializer.fromJson<String?>(json['notes']),
       voidedAt: serializer.fromJson<String?>(json['voidedAt']),
+      supersedesRecordId: serializer.fromJson<int?>(json['supersedesRecordId']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
     );
   }
@@ -2629,6 +2659,7 @@ class MaintenanceRecordRow extends DataClass
       'serviceProvider': serializer.toJson<String?>(serviceProvider),
       'notes': serializer.toJson<String?>(notes),
       'voidedAt': serializer.toJson<String?>(voidedAt),
+      'supersedesRecordId': serializer.toJson<int?>(supersedesRecordId),
       'createdAt': serializer.toJson<String>(createdAt),
     };
   }
@@ -2645,6 +2676,7 @@ class MaintenanceRecordRow extends DataClass
           Value<String?> serviceProvider = const Value.absent(),
           Value<String?> notes = const Value.absent(),
           Value<String?> voidedAt = const Value.absent(),
+          Value<int?> supersedesRecordId = const Value.absent(),
           String? createdAt}) =>
       MaintenanceRecordRow(
         id: id ?? this.id,
@@ -2660,6 +2692,9 @@ class MaintenanceRecordRow extends DataClass
             : this.serviceProvider,
         notes: notes.present ? notes.value : this.notes,
         voidedAt: voidedAt.present ? voidedAt.value : this.voidedAt,
+        supersedesRecordId: supersedesRecordId.present
+            ? supersedesRecordId.value
+            : this.supersedesRecordId,
         createdAt: createdAt ?? this.createdAt,
       );
   MaintenanceRecordRow copyWithCompanion(MaintenanceRecordsCompanion data) {
@@ -2686,6 +2721,9 @@ class MaintenanceRecordRow extends DataClass
           : this.serviceProvider,
       notes: data.notes.present ? data.notes.value : this.notes,
       voidedAt: data.voidedAt.present ? data.voidedAt.value : this.voidedAt,
+      supersedesRecordId: data.supersedesRecordId.present
+          ? data.supersedesRecordId.value
+          : this.supersedesRecordId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -2704,6 +2742,7 @@ class MaintenanceRecordRow extends DataClass
           ..write('serviceProvider: $serviceProvider, ')
           ..write('notes: $notes, ')
           ..write('voidedAt: $voidedAt, ')
+          ..write('supersedesRecordId: $supersedesRecordId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2722,6 +2761,7 @@ class MaintenanceRecordRow extends DataClass
       serviceProvider,
       notes,
       voidedAt,
+      supersedesRecordId,
       createdAt);
   @override
   bool operator ==(Object other) =>
@@ -2738,6 +2778,7 @@ class MaintenanceRecordRow extends DataClass
           other.serviceProvider == this.serviceProvider &&
           other.notes == this.notes &&
           other.voidedAt == this.voidedAt &&
+          other.supersedesRecordId == this.supersedesRecordId &&
           other.createdAt == this.createdAt);
 }
 
@@ -2754,6 +2795,7 @@ class MaintenanceRecordsCompanion
   final Value<String?> serviceProvider;
   final Value<String?> notes;
   final Value<String?> voidedAt;
+  final Value<int?> supersedesRecordId;
   final Value<String> createdAt;
   const MaintenanceRecordsCompanion({
     this.id = const Value.absent(),
@@ -2767,6 +2809,7 @@ class MaintenanceRecordsCompanion
     this.serviceProvider = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidedAt = const Value.absent(),
+    this.supersedesRecordId = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   MaintenanceRecordsCompanion.insert({
@@ -2781,6 +2824,7 @@ class MaintenanceRecordsCompanion
     this.serviceProvider = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidedAt = const Value.absent(),
+    this.supersedesRecordId = const Value.absent(),
     required String createdAt,
   })  : motorcycleId = Value(motorcycleId),
         itemId = Value(itemId),
@@ -2800,6 +2844,7 @@ class MaintenanceRecordsCompanion
     Expression<String>? serviceProvider,
     Expression<String>? notes,
     Expression<String>? voidedAt,
+    Expression<int>? supersedesRecordId,
     Expression<String>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -2814,6 +2859,8 @@ class MaintenanceRecordsCompanion
       if (serviceProvider != null) 'service_provider': serviceProvider,
       if (notes != null) 'notes': notes,
       if (voidedAt != null) 'voided_at': voidedAt,
+      if (supersedesRecordId != null)
+        'supersedes_record_id': supersedesRecordId,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -2830,6 +2877,7 @@ class MaintenanceRecordsCompanion
       Value<String?>? serviceProvider,
       Value<String?>? notes,
       Value<String?>? voidedAt,
+      Value<int?>? supersedesRecordId,
       Value<String>? createdAt}) {
     return MaintenanceRecordsCompanion(
       id: id ?? this.id,
@@ -2843,6 +2891,7 @@ class MaintenanceRecordsCompanion
       serviceProvider: serviceProvider ?? this.serviceProvider,
       notes: notes ?? this.notes,
       voidedAt: voidedAt ?? this.voidedAt,
+      supersedesRecordId: supersedesRecordId ?? this.supersedesRecordId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -2883,6 +2932,9 @@ class MaintenanceRecordsCompanion
     if (voidedAt.present) {
       map['voided_at'] = Variable<String>(voidedAt.value);
     }
+    if (supersedesRecordId.present) {
+      map['supersedes_record_id'] = Variable<int>(supersedesRecordId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -2903,6 +2955,7 @@ class MaintenanceRecordsCompanion
           ..write('serviceProvider: $serviceProvider, ')
           ..write('notes: $notes, ')
           ..write('voidedAt: $voidedAt, ')
+          ..write('supersedesRecordId: $supersedesRecordId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3457,8 +3510,8 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
   static const VerificationMeta _valueMeta = const VerificationMeta('value');
   @override
   late final GeneratedColumn<double> value = GeneratedColumn<double>(
-      'value', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      'value', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
   static const VerificationMeta _unitMeta = const VerificationMeta('unit');
   @override
   late final GeneratedColumn<String> unit = GeneratedColumn<String>(
@@ -3508,6 +3561,12 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
       'notes', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _voidedAtMeta =
+      const VerificationMeta('voidedAt');
+  @override
+  late final GeneratedColumn<String> voidedAt = GeneratedColumn<String>(
+      'voided_at', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -3532,6 +3591,7 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
         visualCondition,
         hasDamage,
         notes,
+        voidedAt,
         createdAt
       ];
   @override
@@ -3591,8 +3651,6 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
     if (data.containsKey('value')) {
       context.handle(
           _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
-    } else if (isInserting) {
-      context.missing(_valueMeta);
     }
     if (data.containsKey('unit')) {
       context.handle(
@@ -3634,6 +3692,10 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
       context.handle(
           _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
     }
+    if (data.containsKey('voided_at')) {
+      context.handle(_voidedAtMeta,
+          voidedAt.isAcceptableOrUnknown(data['voided_at']!, _voidedAtMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -3665,7 +3727,7 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
       measurementType: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}measurement_type'])!,
       value: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}value'])!,
+          .read(DriftSqlType.double, data['${effectivePrefix}value']),
       unit: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit'])!,
       position: attachedDatabase.typeMapping
@@ -3682,6 +3744,8 @@ class $ComponentMeasurementsTable extends ComponentMeasurements
           .read(DriftSqlType.bool, data['${effectivePrefix}has_damage'])!,
       notes: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
+      voidedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}voided_at']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}created_at'])!,
     );
@@ -3704,7 +3768,9 @@ class ComponentMeasurementRow extends DataClass
 
   /// e.g. THICKNESS_MM, VOLTAGE_V, PRESSURE_KPA, TREAD_DEPTH_MM
   final String measurementType;
-  final double value;
+
+  /// Null for condition-only observations (no numeric reading).
+  final double? value;
   final String unit;
 
   /// FRONT | REAR (nullable when not applicable)
@@ -3717,6 +3783,9 @@ class ComponentMeasurementRow extends DataClass
   final String? visualCondition;
   final bool hasDamage;
   final String? notes;
+
+  /// Soft delete: measurements are never physically removed.
+  final String? voidedAt;
   final String createdAt;
   const ComponentMeasurementRow(
       {required this.id,
@@ -3726,7 +3795,7 @@ class ComponentMeasurementRow extends DataClass
       required this.measuredDate,
       this.odometerKm,
       required this.measurementType,
-      required this.value,
+      this.value,
       required this.unit,
       this.position,
       this.measurementContext,
@@ -3735,6 +3804,7 @@ class ComponentMeasurementRow extends DataClass
       this.visualCondition,
       required this.hasDamage,
       this.notes,
+      this.voidedAt,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3750,7 +3820,9 @@ class ComponentMeasurementRow extends DataClass
       map['odometer_km'] = Variable<int>(odometerKm);
     }
     map['measurement_type'] = Variable<String>(measurementType);
-    map['value'] = Variable<double>(value);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<double>(value);
+    }
     map['unit'] = Variable<String>(unit);
     if (!nullToAbsent || position != null) {
       map['position'] = Variable<String>(position);
@@ -3771,6 +3843,9 @@ class ComponentMeasurementRow extends DataClass
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    if (!nullToAbsent || voidedAt != null) {
+      map['voided_at'] = Variable<String>(voidedAt);
+    }
     map['created_at'] = Variable<String>(createdAt);
     return map;
   }
@@ -3788,7 +3863,8 @@ class ComponentMeasurementRow extends DataClass
           ? const Value.absent()
           : Value(odometerKm),
       measurementType: Value(measurementType),
-      value: Value(value),
+      value:
+          value == null && nullToAbsent ? const Value.absent() : Value(value),
       unit: Value(unit),
       position: position == null && nullToAbsent
           ? const Value.absent()
@@ -3807,6 +3883,9 @@ class ComponentMeasurementRow extends DataClass
       hasDamage: Value(hasDamage),
       notes:
           notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      voidedAt: voidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidedAt),
       createdAt: Value(createdAt),
     );
   }
@@ -3822,7 +3901,7 @@ class ComponentMeasurementRow extends DataClass
       measuredDate: serializer.fromJson<String>(json['measuredDate']),
       odometerKm: serializer.fromJson<int?>(json['odometerKm']),
       measurementType: serializer.fromJson<String>(json['measurementType']),
-      value: serializer.fromJson<double>(json['value']),
+      value: serializer.fromJson<double?>(json['value']),
       unit: serializer.fromJson<String>(json['unit']),
       position: serializer.fromJson<String?>(json['position']),
       measurementContext:
@@ -3832,6 +3911,7 @@ class ComponentMeasurementRow extends DataClass
       visualCondition: serializer.fromJson<String?>(json['visualCondition']),
       hasDamage: serializer.fromJson<bool>(json['hasDamage']),
       notes: serializer.fromJson<String?>(json['notes']),
+      voidedAt: serializer.fromJson<String?>(json['voidedAt']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
     );
   }
@@ -3846,7 +3926,7 @@ class ComponentMeasurementRow extends DataClass
       'measuredDate': serializer.toJson<String>(measuredDate),
       'odometerKm': serializer.toJson<int?>(odometerKm),
       'measurementType': serializer.toJson<String>(measurementType),
-      'value': serializer.toJson<double>(value),
+      'value': serializer.toJson<double?>(value),
       'unit': serializer.toJson<String>(unit),
       'position': serializer.toJson<String?>(position),
       'measurementContext': serializer.toJson<String?>(measurementContext),
@@ -3855,6 +3935,7 @@ class ComponentMeasurementRow extends DataClass
       'visualCondition': serializer.toJson<String?>(visualCondition),
       'hasDamage': serializer.toJson<bool>(hasDamage),
       'notes': serializer.toJson<String?>(notes),
+      'voidedAt': serializer.toJson<String?>(voidedAt),
       'createdAt': serializer.toJson<String>(createdAt),
     };
   }
@@ -3867,7 +3948,7 @@ class ComponentMeasurementRow extends DataClass
           String? measuredDate,
           Value<int?> odometerKm = const Value.absent(),
           String? measurementType,
-          double? value,
+          Value<double?> value = const Value.absent(),
           String? unit,
           Value<String?> position = const Value.absent(),
           Value<String?> measurementContext = const Value.absent(),
@@ -3876,6 +3957,7 @@ class ComponentMeasurementRow extends DataClass
           Value<String?> visualCondition = const Value.absent(),
           bool? hasDamage,
           Value<String?> notes = const Value.absent(),
+          Value<String?> voidedAt = const Value.absent(),
           String? createdAt}) =>
       ComponentMeasurementRow(
         id: id ?? this.id,
@@ -3885,7 +3967,7 @@ class ComponentMeasurementRow extends DataClass
         measuredDate: measuredDate ?? this.measuredDate,
         odometerKm: odometerKm.present ? odometerKm.value : this.odometerKm,
         measurementType: measurementType ?? this.measurementType,
-        value: value ?? this.value,
+        value: value.present ? value.value : this.value,
         unit: unit ?? this.unit,
         position: position.present ? position.value : this.position,
         measurementContext: measurementContext.present
@@ -3898,6 +3980,7 @@ class ComponentMeasurementRow extends DataClass
             : this.visualCondition,
         hasDamage: hasDamage ?? this.hasDamage,
         notes: notes.present ? notes.value : this.notes,
+        voidedAt: voidedAt.present ? voidedAt.value : this.voidedAt,
         createdAt: createdAt ?? this.createdAt,
       );
   ComponentMeasurementRow copyWithCompanion(
@@ -3931,6 +4014,7 @@ class ComponentMeasurementRow extends DataClass
           : this.visualCondition,
       hasDamage: data.hasDamage.present ? data.hasDamage.value : this.hasDamage,
       notes: data.notes.present ? data.notes.value : this.notes,
+      voidedAt: data.voidedAt.present ? data.voidedAt.value : this.voidedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -3954,6 +4038,7 @@ class ComponentMeasurementRow extends DataClass
           ..write('visualCondition: $visualCondition, ')
           ..write('hasDamage: $hasDamage, ')
           ..write('notes: $notes, ')
+          ..write('voidedAt: $voidedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3977,6 +4062,7 @@ class ComponentMeasurementRow extends DataClass
       visualCondition,
       hasDamage,
       notes,
+      voidedAt,
       createdAt);
   @override
   bool operator ==(Object other) =>
@@ -3998,6 +4084,7 @@ class ComponentMeasurementRow extends DataClass
           other.visualCondition == this.visualCondition &&
           other.hasDamage == this.hasDamage &&
           other.notes == this.notes &&
+          other.voidedAt == this.voidedAt &&
           other.createdAt == this.createdAt);
 }
 
@@ -4010,7 +4097,7 @@ class ComponentMeasurementsCompanion
   final Value<String> measuredDate;
   final Value<int?> odometerKm;
   final Value<String> measurementType;
-  final Value<double> value;
+  final Value<double?> value;
   final Value<String> unit;
   final Value<String?> position;
   final Value<String?> measurementContext;
@@ -4019,6 +4106,7 @@ class ComponentMeasurementsCompanion
   final Value<String?> visualCondition;
   final Value<bool> hasDamage;
   final Value<String?> notes;
+  final Value<String?> voidedAt;
   final Value<String> createdAt;
   const ComponentMeasurementsCompanion({
     this.id = const Value.absent(),
@@ -4037,6 +4125,7 @@ class ComponentMeasurementsCompanion
     this.visualCondition = const Value.absent(),
     this.hasDamage = const Value.absent(),
     this.notes = const Value.absent(),
+    this.voidedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   ComponentMeasurementsCompanion.insert({
@@ -4047,7 +4136,7 @@ class ComponentMeasurementsCompanion
     required String measuredDate,
     this.odometerKm = const Value.absent(),
     required String measurementType,
-    required double value,
+    this.value = const Value.absent(),
     required String unit,
     this.position = const Value.absent(),
     this.measurementContext = const Value.absent(),
@@ -4056,12 +4145,12 @@ class ComponentMeasurementsCompanion
     this.visualCondition = const Value.absent(),
     this.hasDamage = const Value.absent(),
     this.notes = const Value.absent(),
+    this.voidedAt = const Value.absent(),
     required String createdAt,
   })  : motorcycleId = Value(motorcycleId),
         itemId = Value(itemId),
         measuredDate = Value(measuredDate),
         measurementType = Value(measurementType),
-        value = Value(value),
         unit = Value(unit),
         createdAt = Value(createdAt);
   static Insertable<ComponentMeasurementRow> custom({
@@ -4081,6 +4170,7 @@ class ComponentMeasurementsCompanion
     Expression<String>? visualCondition,
     Expression<bool>? hasDamage,
     Expression<String>? notes,
+    Expression<String>? voidedAt,
     Expression<String>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -4100,6 +4190,7 @@ class ComponentMeasurementsCompanion
       if (visualCondition != null) 'visual_condition': visualCondition,
       if (hasDamage != null) 'has_damage': hasDamage,
       if (notes != null) 'notes': notes,
+      if (voidedAt != null) 'voided_at': voidedAt,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -4112,7 +4203,7 @@ class ComponentMeasurementsCompanion
       Value<String>? measuredDate,
       Value<int?>? odometerKm,
       Value<String>? measurementType,
-      Value<double>? value,
+      Value<double?>? value,
       Value<String>? unit,
       Value<String?>? position,
       Value<String?>? measurementContext,
@@ -4121,6 +4212,7 @@ class ComponentMeasurementsCompanion
       Value<String?>? visualCondition,
       Value<bool>? hasDamage,
       Value<String?>? notes,
+      Value<String?>? voidedAt,
       Value<String>? createdAt}) {
     return ComponentMeasurementsCompanion(
       id: id ?? this.id,
@@ -4139,6 +4231,7 @@ class ComponentMeasurementsCompanion
       visualCondition: visualCondition ?? this.visualCondition,
       hasDamage: hasDamage ?? this.hasDamage,
       notes: notes ?? this.notes,
+      voidedAt: voidedAt ?? this.voidedAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -4194,6 +4287,9 @@ class ComponentMeasurementsCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (voidedAt.present) {
+      map['voided_at'] = Variable<String>(voidedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -4219,6 +4315,7 @@ class ComponentMeasurementsCompanion
           ..write('visualCondition: $visualCondition, ')
           ..write('hasDamage: $hasDamage, ')
           ..write('notes: $notes, ')
+          ..write('voidedAt: $voidedAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -9554,6 +9651,7 @@ typedef $$MaintenanceRecordsTableCreateCompanionBuilder
   Value<String?> serviceProvider,
   Value<String?> notes,
   Value<String?> voidedAt,
+  Value<int?> supersedesRecordId,
   required String createdAt,
 });
 typedef $$MaintenanceRecordsTableUpdateCompanionBuilder
@@ -9569,6 +9667,7 @@ typedef $$MaintenanceRecordsTableUpdateCompanionBuilder
   Value<String?> serviceProvider,
   Value<String?> notes,
   Value<String?> voidedAt,
+  Value<int?> supersedesRecordId,
   Value<String> createdAt,
 });
 
@@ -9601,6 +9700,21 @@ final class $$MaintenanceRecordsTableReferences extends BaseReferences<
         $$MaintenanceItemsTableTableManager($_db, $_db.maintenanceItems)
             .filter((f) => f.id($_item.itemId!));
     final item = $_typedResult.readTableOrNull(_itemIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $MaintenanceRecordsTable _supersedesRecordIdTable(_$AppDatabase db) =>
+      db.maintenanceRecords.createAlias($_aliasNameGenerator(
+          db.maintenanceRecords.supersedesRecordId, db.maintenanceRecords.id));
+
+  $$MaintenanceRecordsTableProcessedTableManager? get supersedesRecordId {
+    if ($_item.supersedesRecordId == null) return null;
+    final manager =
+        $$MaintenanceRecordsTableTableManager($_db, $_db.maintenanceRecords)
+            .filter((f) => f.id($_item.supersedesRecordId!));
+    final item = $_typedResult.readTableOrNull(_supersedesRecordIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
@@ -9751,6 +9865,26 @@ class $$MaintenanceRecordsTableFilterComposer
             $$MaintenanceItemsTableFilterComposer(
               $db: $db,
               $table: $db.maintenanceItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$MaintenanceRecordsTableFilterComposer get supersedesRecordId {
+    final $$MaintenanceRecordsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.supersedesRecordId,
+        referencedTable: $db.maintenanceRecords,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MaintenanceRecordsTableFilterComposer(
+              $db: $db,
+              $table: $db.maintenanceRecords,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -9930,6 +10064,26 @@ class $$MaintenanceRecordsTableOrderingComposer
             ));
     return composer;
   }
+
+  $$MaintenanceRecordsTableOrderingComposer get supersedesRecordId {
+    final $$MaintenanceRecordsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.supersedesRecordId,
+        referencedTable: $db.maintenanceRecords,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MaintenanceRecordsTableOrderingComposer(
+              $db: $db,
+              $table: $db.maintenanceRecords,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
 }
 
 class $$MaintenanceRecordsTableAnnotationComposer
@@ -10008,6 +10162,27 @@ class $$MaintenanceRecordsTableAnnotationComposer
               $removeJoinBuilderFromRootComposer:
                   $removeJoinBuilderFromRootComposer,
             ));
+    return composer;
+  }
+
+  $$MaintenanceRecordsTableAnnotationComposer get supersedesRecordId {
+    final $$MaintenanceRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.supersedesRecordId,
+            referencedTable: $db.maintenanceRecords,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$MaintenanceRecordsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.maintenanceRecords,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
     return composer;
   }
 
@@ -10115,6 +10290,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
     PrefetchHooks Function(
         {bool motorcycleId,
         bool itemId,
+        bool supersedesRecordId,
         bool componentMeasurementsRefs,
         bool maintenanceRecordPartsRefs,
         bool partInstallationsRefs,
@@ -10143,6 +10319,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
             Value<String?> serviceProvider = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> voidedAt = const Value.absent(),
+            Value<int?> supersedesRecordId = const Value.absent(),
             Value<String> createdAt = const Value.absent(),
           }) =>
               MaintenanceRecordsCompanion(
@@ -10157,6 +10334,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
             serviceProvider: serviceProvider,
             notes: notes,
             voidedAt: voidedAt,
+            supersedesRecordId: supersedesRecordId,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
@@ -10171,6 +10349,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
             Value<String?> serviceProvider = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> voidedAt = const Value.absent(),
+            Value<int?> supersedesRecordId = const Value.absent(),
             required String createdAt,
           }) =>
               MaintenanceRecordsCompanion.insert(
@@ -10185,6 +10364,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
             serviceProvider: serviceProvider,
             notes: notes,
             voidedAt: voidedAt,
+            supersedesRecordId: supersedesRecordId,
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0
@@ -10196,6 +10376,7 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {motorcycleId = false,
               itemId = false,
+              supersedesRecordId = false,
               componentMeasurementsRefs = false,
               maintenanceRecordPartsRefs = false,
               partInstallationsRefs = false,
@@ -10240,6 +10421,17 @@ class $$MaintenanceRecordsTableTableManager extends RootTableManager<
                         $$MaintenanceRecordsTableReferences._itemIdTable(db),
                     referencedColumn:
                         $$MaintenanceRecordsTableReferences._itemIdTable(db).id,
+                  ) as T;
+                }
+                if (supersedesRecordId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.supersedesRecordId,
+                    referencedTable: $$MaintenanceRecordsTableReferences
+                        ._supersedesRecordIdTable(db),
+                    referencedColumn: $$MaintenanceRecordsTableReferences
+                        ._supersedesRecordIdTable(db)
+                        .id,
                   ) as T;
                 }
 
@@ -10316,6 +10508,7 @@ typedef $$MaintenanceRecordsTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function(
         {bool motorcycleId,
         bool itemId,
+        bool supersedesRecordId,
         bool componentMeasurementsRefs,
         bool maintenanceRecordPartsRefs,
         bool partInstallationsRefs,
@@ -10737,7 +10930,7 @@ typedef $$ComponentMeasurementsTableCreateCompanionBuilder
   required String measuredDate,
   Value<int?> odometerKm,
   required String measurementType,
-  required double value,
+  Value<double?> value,
   required String unit,
   Value<String?> position,
   Value<String?> measurementContext,
@@ -10746,6 +10939,7 @@ typedef $$ComponentMeasurementsTableCreateCompanionBuilder
   Value<String?> visualCondition,
   Value<bool> hasDamage,
   Value<String?> notes,
+  Value<String?> voidedAt,
   required String createdAt,
 });
 typedef $$ComponentMeasurementsTableUpdateCompanionBuilder
@@ -10757,7 +10951,7 @@ typedef $$ComponentMeasurementsTableUpdateCompanionBuilder
   Value<String> measuredDate,
   Value<int?> odometerKm,
   Value<String> measurementType,
-  Value<double> value,
+  Value<double?> value,
   Value<String> unit,
   Value<String?> position,
   Value<String?> measurementContext,
@@ -10766,6 +10960,7 @@ typedef $$ComponentMeasurementsTableUpdateCompanionBuilder
   Value<String?> visualCondition,
   Value<bool> hasDamage,
   Value<String?> notes,
+  Value<String?> voidedAt,
   Value<String> createdAt,
 });
 
@@ -10884,6 +11079,9 @@ class $$ComponentMeasurementsTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
       column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get voidedAt => $composableBuilder(
+      column: $table.voidedAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -11022,6 +11220,9 @@ class $$ComponentMeasurementsTableOrderingComposer
   ColumnOrderings<String> get notes => $composableBuilder(
       column: $table.notes, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get voidedAt => $composableBuilder(
+      column: $table.voidedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -11133,6 +11334,9 @@ class $$ComponentMeasurementsTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get voidedAt =>
+      $composableBuilder(column: $table.voidedAt, builder: (column) => column);
 
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -11258,7 +11462,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             Value<String> measuredDate = const Value.absent(),
             Value<int?> odometerKm = const Value.absent(),
             Value<String> measurementType = const Value.absent(),
-            Value<double> value = const Value.absent(),
+            Value<double?> value = const Value.absent(),
             Value<String> unit = const Value.absent(),
             Value<String?> position = const Value.absent(),
             Value<String?> measurementContext = const Value.absent(),
@@ -11267,6 +11471,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             Value<String?> visualCondition = const Value.absent(),
             Value<bool> hasDamage = const Value.absent(),
             Value<String?> notes = const Value.absent(),
+            Value<String?> voidedAt = const Value.absent(),
             Value<String> createdAt = const Value.absent(),
           }) =>
               ComponentMeasurementsCompanion(
@@ -11286,6 +11491,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             visualCondition: visualCondition,
             hasDamage: hasDamage,
             notes: notes,
+            voidedAt: voidedAt,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
@@ -11296,7 +11502,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             required String measuredDate,
             Value<int?> odometerKm = const Value.absent(),
             required String measurementType,
-            required double value,
+            Value<double?> value = const Value.absent(),
             required String unit,
             Value<String?> position = const Value.absent(),
             Value<String?> measurementContext = const Value.absent(),
@@ -11305,6 +11511,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             Value<String?> visualCondition = const Value.absent(),
             Value<bool> hasDamage = const Value.absent(),
             Value<String?> notes = const Value.absent(),
+            Value<String?> voidedAt = const Value.absent(),
             required String createdAt,
           }) =>
               ComponentMeasurementsCompanion.insert(
@@ -11324,6 +11531,7 @@ class $$ComponentMeasurementsTableTableManager extends RootTableManager<
             visualCondition: visualCondition,
             hasDamage: hasDamage,
             notes: notes,
+            voidedAt: voidedAt,
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0

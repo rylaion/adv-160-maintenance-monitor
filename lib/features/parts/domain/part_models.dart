@@ -128,4 +128,3 @@ class RecordPartInput {
   /// For replacements: open an installation (and close the previous one).
   final bool trackInstallation;
 }
-

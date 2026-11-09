@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -65,40 +66,59 @@ void main() {
     final cats = await db.select(db.maintenanceCategories).get();
     expect(cats.map((c) => c.name), [
       'Engine',
-      'CVT',
       'Fuel System',
-      'Brakes',
-      'Electrical',
-      'Tires and Wheels',
+      'CVT / Transmission',
+      'Braking System',
       'Cooling System',
-      'Final Drive',
+      'Electrical / Battery',
+      'Tires / Wheels',
+      'Chassis / Suspension',
     ]);
     final items = await db.select(db.maintenanceItems).get();
-    expect(items.map((i) => i.name).toSet(), {
-      'Engine Oil',
-      'CVT Drive Belt',
-      'Fuel Filter',
-      'Fuel Line',
-      'Brake Pads',
-      'Brake Fluid',
-      'Battery',
-      'Tire',
-      'Coolant',
-      'Final Drive Oil',
-    });
+    expect(items, hasLength(25));
+    expect(
+        items.map((i) => i.name).toSet(),
+        containsAll({
+          'Engine Oil',
+          'Engine Oil Strainer Screen',
+          'Spark Plug',
+          'Valve Clearance',
+          'Engine Idle Speed',
+          'Crankcase Breather',
+          'Fuel Line',
+          'Air Cleaner',
+          'Throttle Operation',
+          'Fuel Filter',
+          'Drive Belt',
+          'Clutch Shoes Wear',
+          'Final Drive Oil',
+          'Brake Fluid',
+          'Brake Pads Wear',
+          'Brake System',
+          'Radiator Coolant',
+          'Cooling System',
+          'Battery',
+          'Headlight Aim',
+          'Lights/Horn',
+          'Wheels/Tyres',
+          'Side Stand',
+          'Suspension',
+          'Nuts, Bolts, Fasteners',
+          'Steering Head Bearings',
+        }));
     final oil = items.firstWhere((i) => i.name == 'Engine Oil');
     final engine = cats.firstWhere((c) => c.name == 'Engine');
     expect(oil.categoryId, engine.id);
-    // No invented specs.
-    expect(items.every((i) => i.instructions == null), isTrue);
-    expect(await db.select(db.maintenanceRules).get(), hasLength(6));
+    final ff = items.firstWhere((i) => i.name == 'Fuel Filter');
+    expect(ff.instructions, contains('User-defined maintenance task'));
+    expect(await db.select(db.maintenanceRules).get(), hasLength(28));
   });
 
   test('seed is idempotent', () async {
     await InitialSeed(db).run();
     expect(await db.select(db.motorcycles).get(), hasLength(1));
     expect(await db.select(db.maintenanceCategories).get(), hasLength(8));
-    expect(await db.select(db.maintenanceItems).get(), hasLength(10));
+    expect(await db.select(db.maintenanceItems).get(), hasLength(25));
   });
 
   test('foreign keys block deleting categories that have items', () async {
@@ -169,14 +189,14 @@ void main() {
   test('component measurements store decimals', () async {
     final bike = (await db.select(db.motorcycles).get()).single;
     final item = (await db.select(db.maintenanceItems).get())
-        .firstWhere((i) => i.name == 'CVT Drive Belt');
+        .firstWhere((i) => i.name == 'Drive Belt');
     await db.into(db.componentMeasurements).insert(
           ComponentMeasurementsCompanion.insert(
             motorcycleId: bike.id,
             itemId: item.id,
             measuredDate: '2026-01-01',
             measurementType: 'THICKNESS_MM',
-            value: 21.35,
+            value: const Value(21.35),
             unit: 'mm',
             createdAt: '2026-01-01T00:00:00',
           ),

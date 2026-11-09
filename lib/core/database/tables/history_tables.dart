@@ -74,6 +74,7 @@ class ComponentMeasurements extends Table {
 
   /// e.g. THICKNESS_MM, VOLTAGE_V, PRESSURE_KPA, TREAD_DEPTH_MM
   TextColumn get measurementType => text()();
+
   /// Null for condition-only observations (no numeric reading).
   RealColumn get value => real().nullable()();
   TextColumn get unit => text()();
@@ -93,4 +94,3 @@ class ComponentMeasurements extends Table {
   TextColumn get voidedAt => text().nullable()();
   TextColumn get createdAt => text()();
 }
-

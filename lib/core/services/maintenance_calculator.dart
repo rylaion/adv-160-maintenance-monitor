@@ -1,5 +1,5 @@
-import '../enums/enums.dart';
 import '../../features/maintenance/domain/maintenance_models.dart';
+import '../enums/enums.dart';
 import '../utils/date_utils.dart';
 
 /// Pure maintenance rule engine (no Flutter, no database).
@@ -14,12 +14,13 @@ import '../utils/date_utils.dart';
 /// * A service satisfies a checkpoint when its action is compatible with the
 ///   checkpoint's action code and it was done at or after
 ///   `dueKm - earlyToleranceKm` (or `dueDate - earlyToleranceDays`), which
-///   supports completing maintenance earlier than scheduled. Services done
-///   after a checkpoint also satisfy every earlier checkpoint.
+///   supports completing maintenance earlier than scheduled.
 /// * Simple interval rules (custom/date) count from the last matching service,
 ///   or from the baseline if none exists.
-/// * Checkpoints below the first tracked odometer reading ([baselineKm]) are
-///   not counted as missed; they are reported as `skippedBeforeTracking`.
+/// * Manufacturer checkpoints are never marked completed or skipped merely
+///   because the odometer was updated; if a checkpoint was skipped, it remains
+///   OVERDUE until the user records completion (unless [skipBeforeBaseline] is
+///   explicitly enabled by a caller).
 ///
 /// Thresholds and tolerances are app policy, not Honda specifications.
 class MaintenanceCalculator {
@@ -27,11 +28,13 @@ class MaintenanceCalculator {
     this.thresholds = const MaintenanceThresholds(),
     this.earlyToleranceKm = 1000,
     this.earlyToleranceDays = 30,
+    this.skipBeforeBaseline = false,
   });
 
   final MaintenanceThresholds thresholds;
   final int earlyToleranceKm;
   final int earlyToleranceDays;
+  final bool skipBeforeBaseline;
 
   /// Evaluates every active rule of one item and combines the results.
   ItemEvaluation evaluateItem({
@@ -132,23 +135,63 @@ class MaintenanceCalculator {
       if (e.odometerKm > limKm) limKm = e.odometerKm;
       if (e.date.isAfter(limDate)) limDate = e.date;
     }
+    final horizonKm = limKm + thresholds.upcomingKm > 36000
+        ? limKm + thresholds.upcomingKm
+        : 36000;
 
     var missingBaseline = false;
     var skipped = 0;
     final open = <_Open>[];
-    var anyCheckpoint = false;
+    final generated = <Checkpoint>[];
 
-    for (final cp in _generate(rule, limKm, limDate, baselineDate, () {
+    for (final cp
+        in _generate(rule, limKm, horizonKm, limDate, baselineDate, () {
       missingBaseline = true;
     }, (c) => _isSatisfied(c, events))) {
-      anyCheckpoint = true;
+      generated.add(cp);
+    }
+
+    generated.sort((a, b) {
+      final k = (a.dueKm ?? 1 << 30).compareTo(b.dueKm ?? 1 << 30);
+      if (k != 0) return k;
+      return a.sequence.compareTo(b.sequence);
+    });
+
+    final checkpointEvals = <CheckpointEvaluation>[];
+    for (var i = 0; i < generated.length; i++) {
+      final cp = generated[i];
+      final nextCpKm =
+          (i + 1 < generated.length) ? generated[i + 1].dueKm : null;
+      final remKm = _remainingKm(cp.dueKm, currentKm);
+      final remDays = _remainingDays(cp.dueDate, today);
+      final completedBy = _satisfyingEventForWindow(cp, nextCpKm, events);
+
+      if (completedBy != null) {
+        checkpointEvals.add(CheckpointEvaluation(
+          rule: rule,
+          checkpoint: cp,
+          status: MaintenanceStatus.completed,
+          remainingKm: remKm,
+          remainingDays: remDays,
+          completedBy: completedBy,
+        ));
+      } else {
+        checkpointEvals.add(CheckpointEvaluation(
+          rule: rule,
+          checkpoint: cp,
+          status: _statusFor(remKm, remDays),
+          remainingKm: remKm,
+          remainingDays: remDays,
+        ));
+      }
+
       if (_isSatisfied(cp, events)) continue;
-      if (_predatesTracking(cp, baselineKm, baselineDate)) {
+      if (skipBeforeBaseline &&
+          _predatesTracking(cp, baselineKm, baselineDate)) {
         skipped++;
         continue;
       }
-      open.add(_Open(cp, _remainingKm(cp.dueKm, currentKm),
-          _remainingDays(cp.dueDate, today)));
+      open.add(_Open(cp, remKm, remDays));
     }
 
     final lastService = _latest(
@@ -160,7 +203,8 @@ class MaintenanceCalculator {
         status: MaintenanceStatus.good,
         lastService: lastService,
         skippedBeforeTracking: skipped,
-        missingBaseline: missingBaseline && !anyCheckpoint,
+        missingBaseline: missingBaseline && generated.isEmpty,
+        checkpoints: checkpointEvals,
       );
     }
 
@@ -186,12 +230,14 @@ class MaintenanceCalculator {
       lastService: lastService,
       skippedBeforeTracking: skipped,
       missingBaseline: missingBaseline,
+      checkpoints: checkpointEvals,
     );
   }
 
   Iterable<Checkpoint> _generate(
     RuleDef rule,
     int limKm,
+    int horizonKm,
     DateTime limDate,
     DateTime? baselineDate,
     void Function() onMissingBaseline,
@@ -233,7 +279,7 @@ class MaintenanceCalculator {
         yield cp;
 
         if (!repeats) break;
-        final kmDone = km == null || km > limKm;
+        final kmDone = km == null || (km > limKm && km >= horizonKm);
         final dateDone = date == null || date.isAfter(limDate);
         // Keep going past the horizon while checkpoints are already satisfied
         // (e.g. by an early service), so the next open one is always found.
@@ -255,6 +301,34 @@ class MaintenanceCalculator {
       }
     }
     return false;
+  }
+
+  /// Finds the specific service event that completed [cp] within its checkpoint
+  /// window (before the next checkpoint's window).
+  ServiceEvent? _satisfyingEventForWindow(
+    Checkpoint cp,
+    int? nextDueKm,
+    List<ServiceEvent> events,
+  ) {
+    ServiceEvent? match;
+    for (final e in events) {
+      if (!cp.actionCode.isSatisfiedBy(e.action)) continue;
+      if (cp.dueKm != null) {
+        final minKm = cp.dueKm! - earlyToleranceKm;
+        final maxKm = nextDueKm == null ? null : nextDueKm - earlyToleranceKm;
+        if (e.odometerKm >= minKm && (maxKm == null || e.odometerKm < maxKm)) {
+          if (match == null || e.odometerKm >= match.odometerKm) {
+            match = e;
+          }
+        }
+      } else if (cp.dueDate != null) {
+        if (!e.date.isBefore(
+            cp.dueDate!.subtract(Duration(days: earlyToleranceDays)))) {
+          match = e;
+        }
+      }
+    }
+    return match;
   }
 
   bool _predatesTracking(
@@ -305,20 +379,42 @@ class MaintenanceCalculator {
 
     final remKm = _remainingKm(dueKm, currentKm);
     final remDays = _remainingDays(dueDate, today);
+    final nextCp = Checkpoint(
+        actionCode: rule.actionCode,
+        dueKm: dueKm,
+        dueDate: dueDate,
+        sequence: 0);
+    final status = _statusFor(remKm, remDays);
     return RuleEvaluation(
       rule: rule,
-      status: _statusFor(remKm, remDays),
-      next: Checkpoint(
-          actionCode: rule.actionCode,
-          dueKm: dueKm,
-          dueDate: dueDate,
-          sequence: 0),
+      status: status,
+      next: nextCp,
       remainingKm: remKm,
       remainingDays: remDays,
-      missedCount:
-          _statusFor(remKm, remDays) == MaintenanceStatus.overdue ? 1 : 0,
+      missedCount: status == MaintenanceStatus.overdue ? 1 : 0,
       lastService: last,
       missingBaseline: missingBaseline,
+      checkpoints: [
+        if (last != null)
+          CheckpointEvaluation(
+            rule: rule,
+            checkpoint: Checkpoint(
+              actionCode: rule.actionCode,
+              dueKm: last.odometerKm,
+              dueDate: last.date,
+              sequence: 0,
+            ),
+            status: MaintenanceStatus.completed,
+            completedBy: last,
+          ),
+        CheckpointEvaluation(
+          rule: rule,
+          checkpoint: nextCp,
+          status: status,
+          remainingKm: remKm,
+          remainingDays: remDays,
+        ),
+      ],
     );
   }
 

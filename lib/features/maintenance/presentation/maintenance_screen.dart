@@ -250,45 +250,64 @@ class _CheckpointTaskTile extends StatelessWidget {
     final completed = task.completedBy;
     final defaultAction = task.actionCode.defaultMaintenanceAction.code;
 
+    final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(
-          '${task.item.name} · ${task.actionCode.label} (${task.actionCode.code})',
-        ),
-        subtitle: Text([
-          'Category: ${task.category.name}',
-          if (dueKm != null)
-            'Scheduled at ${StatusText.km(dueKm)}'
-                '${remKm != null && !task.isCompleted ? ' (${StatusText.remainingKm(remKm)})' : ''}',
-          if (completed != null)
-            'Completed: ${AppDates.formatDate(completed.date)} at ${StatusText.km(completed.odometerKm)}',
-        ].join('\n')),
-        isThreeLine: true,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            StatusChip(status: task.status),
-            if (!task.isCompleted)
-              InkWell(
-                onTap: () => context.push(
-                  '/maintenance/record?itemId=${task.item.id}'
-                  '&action=$defaultAction'
-                  '${dueKm != null ? '&km=$dueKm' : ''}',
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Complete',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${task.item.name} · ${task.actionCode.label} (${task.actionCode.code})',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      'Category: ${task.category.name}',
+                      if (dueKm != null)
+                        'Scheduled at ${StatusText.km(dueKm)}'
+                            '${remKm != null && !task.isCompleted ? ' (${StatusText.remainingKm(remKm)})' : ''}',
+                      if (completed != null)
+                        'Completed: ${AppDates.formatDate(completed.date)} at ${StatusText.km(completed.odometerKm)}',
+                    ].join('\n'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                StatusChip(status: task.status),
+                if (!task.isCompleted)
+                  InkWell(
+                    onTap: () => context.push(
+                      '/maintenance/record?itemId=${task.item.id}'
+                      '&action=$defaultAction'
+                      '${dueKm != null ? '&km=$dueKm' : ''}',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Complete',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
+            ),
           ],
         ),
       ),

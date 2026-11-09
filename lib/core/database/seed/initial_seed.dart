@@ -4,7 +4,7 @@ import '../../constants/app_constants.dart';
 import '../app_database.dart';
 
 /// Seeds first-run data: the motorcycle, the 8 maintenance categories, and all
-/// 25 maintenance items (24 official 2023 Honda ADV160 Owner's Manual items
+/// 26 maintenance items (25 official 2023 Honda ADV160 Owner's Manual items
 /// plus the user-defined `Fuel Filter` item).
 class InitialSeed {
   InitialSeed(this.db);
@@ -14,6 +14,11 @@ class InitialSeed {
       'User-defined maintenance task (not a Honda-prescribed interval in '
       '2023 Honda ADV160 Owner\'s Manual 32K0WA100; the official schedule '
       'lists Fuel Line inspection only).';
+
+  static const String lightsHornPreRideLabel =
+      'Pre-ride inspection item (2023 Honda ADV160 Owner\'s Manual 32K0WA100, '
+      'pp. 89–90): check that lights, indicators, and horn function properly '
+      'before each ride.';
 
   /// Category name -> item names (ordered per Section 6).
   static const Map<String, List<String>> categoryItems = {
@@ -98,8 +103,11 @@ class InitialSeed {
 
         for (final itemName in entry.value) {
           itemOrder++;
-          final defaultInstructions =
-              itemName == 'Fuel Filter' ? fuelFilterCustomLabel : null;
+          final defaultInstructions = switch (itemName) {
+            'Fuel Filter' => fuelFilterCustomLabel,
+            'Lights/Horn' => lightsHornPreRideLabel,
+            _ => null,
+          };
           await db.into(db.maintenanceItems).insert(
                 MaintenanceItemsCompanion.insert(
                   categoryId: category.id,
@@ -119,7 +127,7 @@ class InitialSeed {
             sortOrder: Value(itemOrder),
             instructions:
                 existingItem.instructions == null && defaultInstructions != null
-                    ? const Value(fuelFilterCustomLabel)
+                    ? Value(defaultInstructions)
                     : const Value.absent(),
           ));
         }

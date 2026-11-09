@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -17,6 +18,7 @@ import 'package:adv_mon/features/parts/data/parts_repository.dart';
 import 'package:adv_mon/features/parts/domain/part_models.dart';
 
 void main() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   late AppDatabase db1;
   late AppDatabase db2;
   late Directory tempDir1;

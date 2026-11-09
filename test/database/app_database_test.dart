@@ -75,7 +75,7 @@ void main() {
       'Chassis / Suspension',
     ]);
     final items = await db.select(db.maintenanceItems).get();
-    expect(items, hasLength(25));
+    expect(items, hasLength(26));
     expect(
         items.map((i) => i.name).toSet(),
         containsAll({
@@ -118,7 +118,7 @@ void main() {
     await InitialSeed(db).run();
     expect(await db.select(db.motorcycles).get(), hasLength(1));
     expect(await db.select(db.maintenanceCategories).get(), hasLength(8));
-    expect(await db.select(db.maintenanceItems).get(), hasLength(25));
+    expect(await db.select(db.maintenanceItems).get(), hasLength(26));
   });
 
   test('foreign keys block deleting categories that have items', () async {

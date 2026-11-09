@@ -126,7 +126,7 @@ void main() {
 
       await runMigrations(db, db.createMigrator(), 1, 2);
       expect(await db.select(db.maintenanceRules).get(), hasLength(28));
-      expect(await db.select(db.maintenanceRuleSteps).get(), hasLength(50));
+      expect(await db.select(db.maintenanceRuleSteps).get(), hasLength(36));
 
       await runMigrations(db, db.createMigrator(), 1, 2);
       expect(await db.select(db.maintenanceRules).get(), hasLength(28));
@@ -407,7 +407,7 @@ void main() {
       o = await overview();
       expect(o.currentKm, 500);
       expect(o.trackedKm, 0);
-      expect(o.scheduled.length, 23);
+      expect(o.scheduled.length, 24);
       expect(o.unscheduled.map((i) => i.item.name).toSet(),
           {'Fuel Filter', 'Lights/Horn'});
 
@@ -424,7 +424,7 @@ void main() {
       expect(bf.status, MaintenanceStatus.good);
 
       expect(o.statusCounts[MaintenanceStatus.upcoming.code], 4);
-      expect(o.statusCounts[MaintenanceStatus.good.code], 19);
+      expect(o.statusCounts[MaintenanceStatus.good.code], 20);
       expect(o.overdue, isEmpty);
       expect(o.dueSoon.map((i) => i.item.name).toSet(), {
         'Engine Oil',

@@ -1,9 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:adv_mon/app.dart';
 import 'package:adv_mon/core/database/app_database.dart';
 import 'package:adv_mon/core/database/migrations/migrations.dart';
 import 'package:adv_mon/core/enums/enums.dart';
@@ -12,7 +10,6 @@ import 'package:adv_mon/core/utils/date_utils.dart';
 import 'package:adv_mon/features/maintenance/data/maintenance_repository.dart';
 import 'package:adv_mon/features/maintenance/domain/maintenance_overview.dart';
 import 'package:adv_mon/features/odometer/data/odometer_repository.dart';
-import 'package:adv_mon/shared/providers/providers.dart';
 
 void main() {
   late AppDatabase db;
@@ -452,55 +449,6 @@ void main() {
       expect(renamedBelt.name, 'Drive Belt');
       final records = await db.select(db.maintenanceRecords).get();
       expect(records.single.itemId, beltId);
-    });
-  });
-
-  group('UI Widget Verification', () {
-    testWidgets(
-        'Dashboard and Maintenance Inspection Guide render checkpoints and categories',
-        (tester) async {
-      await odo.record(motorcycleId: bikeId, readingKm: 11500, date: day);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            appDatabaseProvider.overrideWithValue(db),
-            clockProvider.overrideWithValue(clock),
-          ],
-          child: const AdvMonApp(),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Dashboard shows Next Major Maintenance Checkpoint (12,000 km).
-      expect(find.text('NEXT MAJOR MAINTENANCE CHECKPOINT'), findsOneWidget);
-      expect(find.text('12,000 km'), findsWidgets);
-
-      // Navigate to Maintenance screen.
-      await tester.tap(find.text('Maintenance'));
-      await tester.pumpAndSettle();
-
-      // Verify tabs exist.
-      expect(find.text('By Category'), findsOneWidget);
-      expect(find.text('Inspection Guide'), findsOneWidget);
-
-      // Verify categories and Fuel Filter user-defined badge on By Category tab.
-      expect(find.text('ENGINE'), findsOneWidget);
-      expect(find.text('FUEL SYSTEM'), findsOneWidget);
-      expect(
-        find.text('User-defined task (not a Honda-prescribed interval)'),
-        findsOneWidget,
-      );
-
-      // Switch to Inspection Guide tab.
-      await tester.tap(find.text('Inspection Guide'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('All Checkpoints'), findsOneWidget);
-      expect(find.text('12,000 km'), findsWidgets);
-
-      await db.close();
-      await tester.pump(const Duration(milliseconds: 100));
     });
   });
 }

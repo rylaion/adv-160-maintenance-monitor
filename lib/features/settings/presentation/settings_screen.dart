@@ -128,6 +128,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   keyboardType: TextInputType.number,
                   decoration:
                       const InputDecoration(labelText: 'Due threshold (km)'),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    return (n == null || n < 0)
+                        ? 'Enter a non-negative integer'
+                        : null;
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -135,6 +141,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                       labelText: 'Upcoming threshold (km)'),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    final due = int.tryParse(dueKmCtl.text.trim()) ?? 0;
+                    if (n == null || n < 0) {
+                      return 'Enter a non-negative integer';
+                    }
+                    if (n < due) {
+                      return 'Must be ≥ due threshold';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -142,6 +159,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   keyboardType: TextInputType.number,
                   decoration:
                       const InputDecoration(labelText: 'Due threshold (days)'),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    return (n == null || n < 0)
+                        ? 'Enter a non-negative integer'
+                        : null;
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -149,6 +172,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                       labelText: 'Upcoming threshold (days)'),
+                  validator: (v) {
+                    final n = int.tryParse((v ?? '').trim());
+                    final due = int.tryParse(dueDaysCtl.text.trim()) ?? 0;
+                    if (n == null || n < 0) {
+                      return 'Enter a non-negative integer';
+                    }
+                    if (n < due) {
+                      return 'Must be ≥ due threshold';
+                    }
+                    return null;
+                  },
                 ),
               ],
             ),
@@ -159,15 +193,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancel')),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
+              onPressed: () {
+                if (key.currentState!.validate()) Navigator.pop(ctx, true);
+              },
               child: const Text('Save')),
         ],
       ),
     );
     if (ok != true) return;
     final next = current.copyWith(
-      dueThresholdKm: int.tryParse(dueKmCtl.text.trim()) ?? 100,
-      upcomingThresholdKm: int.tryParse(upKmCtl.text.trim()) ?? 1000,
+      dueThresholdKm: int.tryParse(dueKmCtl.text.trim()) ?? 0,
+      upcomingThresholdKm: int.tryParse(upKmCtl.text.trim()) ?? 500,
       dueThresholdDays: int.tryParse(dueDaysCtl.text.trim()) ?? 7,
       upcomingThresholdDays: int.tryParse(upDaysCtl.text.trim()) ?? 30,
     );

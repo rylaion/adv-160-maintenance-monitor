@@ -279,7 +279,8 @@ class HondaScheduleSeed {
         ActionCode.inspect,
         page: 89,
         steps: [
-          step(ActionCode.inspect, atKm: 12000, repeatEveryKm: 24000),
+          step(ActionCode.inspect, atKm: 12000),
+          step(ActionCode.inspect, atKm: 36000, repeatEveryKm: 24000),
         ],
         notes: 'Inspect at 12,000 km and 36,000 km (every 24,000 km).',
       );
@@ -374,15 +375,9 @@ class HondaScheduleSeed {
         ],
       );
 
-      // 19. Lights/Horn: Pre-ride inspection item (page 89 & 90).
-      await add(
-        'Lights/Horn',
-        RuleType.condition,
-        ActionCode.inspect,
-        page: 89,
-        notes: 'Pre-ride check item (page 90): check that lights, indicators '
-            'and horn function properly before each ride.',
-      );
+      // Note: 19. Lights/Horn (page 89) has no odometer/date checkpoints in the
+      // maintenance schedule columns; it is a pre-ride inspection item (page 90)
+      // and is seeded with pre-ride instructions in InitialSeed.
 
       // 20. Clutch Shoes Wear: I at 12k, 24k, 36k (every 12,000 km).
       await add(

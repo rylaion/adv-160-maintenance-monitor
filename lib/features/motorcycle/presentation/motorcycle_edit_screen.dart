@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/date_utils.dart';
+import '../../../shared/providers/providers.dart';
 import '../domain/motorcycle.dart';
 import 'motorcycle_view_model.dart';
 
@@ -54,23 +54,23 @@ class _MotorcycleEditScreenState extends ConsumerState<MotorcycleEditScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (file == null) return;
+    final path = await ref.read(photoPickerProvider).pick(camera: false);
+    if (path == null) return;
     final stored = await ref
         .read(motorcycleEditViewModelProvider.notifier)
-        .storePhoto(file.path);
+        .storePhoto(path);
     if (mounted) setState(() => _photoPath = stored);
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = AppDates.todayManila(ref.read(clockProvider)());
     final d = await showDatePicker(
       context: context,
       initialDate: _purchaseDate ?? now,
       firstDate: DateTime(1990),
       lastDate: now,
     );
-    if (d != null) setState(() => _purchaseDate = d);
+    if (d != null) setState(() => _purchaseDate = AppDates.dateOnly(d));
   }
 
   Future<void> _save() async {

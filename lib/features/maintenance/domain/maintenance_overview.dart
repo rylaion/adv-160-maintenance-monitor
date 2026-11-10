@@ -68,7 +68,9 @@ class MaintenanceOverview {
   /// Scheduled items currently OVERDUE (or flagged REPLACEMENT_REQUIRED).
   List<ItemStatus> get overdue => _sorted(scheduled.where((i) =>
       i.evaluation.status == MaintenanceStatus.overdue ||
-      i.evaluation.status == MaintenanceStatus.replacementRequired));
+      i.evaluation.status == MaintenanceStatus.replacementRequired ||
+      i.evaluation.checkpoints
+          .any((c) => c.status == MaintenanceStatus.overdue)));
 
   /// Scheduled items currently DUE (or flagged INSPECTION_REQUIRED).
   List<ItemStatus> get due => _sorted(scheduled.where((i) =>
@@ -172,14 +174,17 @@ class MaintenanceOverview {
 
   /// Count of scheduled items per status code.
   Map<String, int> get statusCounts {
-    final m = <String, int>{};
-    for (final i in scheduled) {
-      m.update(i.evaluation.status.code, (v) => v + 1, ifAbsent: () => 1);
-    }
-    if (completedTasks.isNotEmpty) {
-      m[MaintenanceStatus.completed.code] = completedTasks.length;
-    }
-    return m;
+    return {
+      MaintenanceStatus.overdue.code: overdue.length,
+      MaintenanceStatus.due.code: due.length,
+      MaintenanceStatus.upcoming.code: upcoming.length,
+      MaintenanceStatus.completed.code: completedItems.isNotEmpty
+          ? completedItems.length
+          : completedTasks.length,
+      MaintenanceStatus.good.code: scheduled
+          .where((i) => i.evaluation.status == MaintenanceStatus.good)
+          .length,
+    };
   }
 
   bool get needsBaseline => items.any((i) => i.evaluation.needsBaseline);

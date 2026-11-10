@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/enums/enums.dart';
 import '../../../core/utils/date_utils.dart';
@@ -137,16 +138,31 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
         notes: _notes.text,
         photoPaths: List.of(_photos),
       ));
-    } else if (slug == 'brake_pads') {
+    } else if (slug == 'brake_pads' || slug == 'brake_discs') {
       final mm = double.parse(_value1.text.trim());
       err = await compNotifier.addMeasurement(NewComponentMeasurement(
         motorcycleId: bike.id,
         itemId: itemId,
         measuredDate: _date,
         odometerKm: km,
-        measurementType: MeasurementType.thicknessMm,
+        measurementType: slug == 'brake_discs'
+            ? MeasurementType.discThicknessMm
+            : MeasurementType.thicknessMm,
         value: mm,
         position: _position,
+        visualCondition: _condition.text,
+        notes: _notes.text,
+        photoPaths: List.of(_photos),
+      ));
+    } else if (slug == 'throttle') {
+      final mm = double.parse(_value1.text.trim());
+      err = await compNotifier.addMeasurement(NewComponentMeasurement(
+        motorcycleId: bike.id,
+        itemId: itemId,
+        measuredDate: _date,
+        odometerKm: km,
+        measurementType: MeasurementType.freeplayMm,
+        value: mm,
         visualCondition: _condition.text,
         notes: _notes.text,
         photoPaths: List.of(_photos),
@@ -356,7 +372,10 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
             children: [
               _SpecificationBanner(status: itemStatus),
               const SizedBox(height: 8),
-              ItemStatusCard(status: itemStatus),
+              ItemStatusCard(
+                status: itemStatus,
+                onTap: () => context.push('/maintenance/item/$itemId'),
+              ),
               const SizedBox(height: 12),
               _buildCharts(measurements),
               const SizedBox(height: 12),
@@ -420,7 +439,7 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
       return MeasurementTrendChart(
           measurements: m, unit: 'mm', title: 'CVT Belt Thickness Trend');
     }
-    if (slug == 'brake_pads') {
+    if (slug == 'brake_pads' || slug == 'brake_discs') {
       final front = measurements
           .where((x) =>
               x.measurementType == MeasurementType.thicknessMm &&
@@ -431,14 +450,15 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
               x.measurementType == MeasurementType.thicknessMm &&
               x.position == 'REAR')
           .toList();
+      final label = slug == 'brake_discs' ? 'Disc Thickness' : 'Pad Thickness';
       return Column(
         children: [
           if (front.isNotEmpty)
             MeasurementTrendChart(
-                measurements: front, unit: 'mm', title: 'Front Pad Thickness'),
+                measurements: front, unit: 'mm', title: 'Front $label'),
           if (rear.isNotEmpty)
             MeasurementTrendChart(
-                measurements: rear, unit: 'mm', title: 'Rear Pad Thickness'),
+                measurements: rear, unit: 'mm', title: 'Rear $label'),
         ],
       );
     }
@@ -508,7 +528,9 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
                 },
               ),
               const SizedBox(height: 10),
-              if (slug == 'brake_pads' || slug == 'tires') ...[
+              if (slug == 'brake_pads' ||
+                  slug == 'brake_discs' ||
+                  slug == 'tires') ...[
                 DropdownButtonFormField<String>(
                   value: _position,
                   decoration:
@@ -559,13 +581,19 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
                 ),
                 const SizedBox(height: 10),
               ],
-              if (slug == 'cvt_belt' || slug == 'brake_pads') ...[
+              if (slug == 'cvt_belt' ||
+                  slug == 'brake_pads' ||
+                  slug == 'brake_discs' ||
+                  slug == 'throttle') ...[
                 TextFormField(
                   controller: _value1,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                      labelText: 'Measured thickness (mm)'),
+                  decoration: InputDecoration(
+                    labelText: slug == 'throttle'
+                        ? 'Measured freeplay (mm)'
+                        : 'Measured thickness (mm)',
+                  ),
                   validator: _validatePositiveDecimal,
                 ),
                 const SizedBox(height: 10),

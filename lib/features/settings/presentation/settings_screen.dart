@@ -379,7 +379,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: Icon(Icons.info_outline),
                 title: Text('$kAppName – Honda ADV 160 Maintenance Monitor'),
                 subtitle: Text(
-                  'Database schema v$kDatabaseSchemaVersion · '
+                  'Version $kAppVersion · Database schema v$kDatabaseSchemaVersion · '
                   'Timezone $kAppTimeZone · 100% Offline',
                 ),
               ),

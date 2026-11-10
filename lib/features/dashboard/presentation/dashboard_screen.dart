@@ -279,6 +279,47 @@ class _NextMajorCheckpointCard extends StatelessWidget {
   final int? currentKm;
   final List<ScheduledTaskStatus> tasks;
 
+  void _showCheckpointSheet(BuildContext context) {
+    if (tasks.isEmpty) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Checkpoint ${StatusText.km(checkpointKm)} Schedule (${tasks.length})',
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            for (final t in tasks)
+              Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(
+                    '${t.item.name} · ${t.actionCode.label} (${t.actionCode.code})',
+                  ),
+                  subtitle: Text(
+                    'Category: ${t.category.name} · '
+                    'Scheduled at ${StatusText.km(checkpointKm)}',
+                  ),
+                  trailing: StatusChip(status: t.status),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.push('/maintenance/item/${t.item.id}');
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -291,38 +332,43 @@ class _NextMajorCheckpointCard extends StatelessWidget {
         tasks.where((t) => t.actionCode == ActionCode.clean).length;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.flag_outlined),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Next major maintenance checkpoint',
-                    style: theme.textTheme.titleMedium,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _showCheckpointSheet(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.flag_outlined),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Next major maintenance checkpoint',
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              rem == null
-                  ? StatusText.km(checkpointKm)
-                  : '${StatusText.km(checkpointKm)} (${StatusText.remainingKm(rem)})',
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${tasks.length} scheduled item(s): '
-              '$inspectCount Inspect (I) · $replaceCount Replace (R) · '
-              '$cleanCount Clean (C)',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                rem == null
+                    ? StatusText.km(checkpointKm)
+                    : '${StatusText.km(checkpointKm)} (${StatusText.remainingKm(rem)})',
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${tasks.length} scheduled item(s): '
+                '$inspectCount Inspect (I) · $replaceCount Replace (R) · '
+                '$cleanCount Clean (C) · Tap to view items',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -385,7 +431,14 @@ class _Summary extends StatelessWidget {
           .where((i) => i.evaluation.status == MaintenanceStatus.good)
           .toList(),
     };
-    if (list.isEmpty) return;
+    if (list.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'No ${s.label.toLowerCase()} maintenance items right now.')),
+      );
+      return;
+    }
 
     showModalBottomSheet<void>(
       context: context,
@@ -431,29 +484,89 @@ class _Summary extends StatelessWidget {
     );
   }
 
+  void _showUnscheduledSheet(BuildContext context) {
+    final list = overview.unscheduled.toList();
+    if (list.isEmpty) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Condition / Unscheduled Items (${list.length})',
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            for (final item in list)
+              ItemStatusCard(
+                status: item,
+                showCategory: true,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/maintenance/item/${item.item.id}');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const summaryOrder = [
+      MaintenanceStatus.overdue,
+      MaintenanceStatus.due,
+      MaintenanceStatus.upcoming,
+      MaintenanceStatus.completed,
+      MaintenanceStatus.good,
+    ];
     final chips = <Widget>[];
-    for (final s in MaintenanceStatus.values) {
-      final n = counts[s.code];
-      if (n == null) continue;
-      chips.add(InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _showStatusItemsSheet(context, s),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            StatusChip(status: s),
-            const SizedBox(width: 4),
-            Text('$n'),
-          ]),
+    for (final s in summaryOrder) {
+      final n = counts[s.code] ?? 0;
+      chips.add(
+        InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _showStatusItemsSheet(context, s),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StatusChip(status: s),
+                const SizedBox(width: 6),
+                Text(
+                  '$n',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(Icons.chevron_right, size: 16),
+              ],
+            ),
+          ),
         ),
-      ));
+      );
     }
-    if (chips.isEmpty) chips.add(const Text('No scheduled items'));
-    return Wrap(spacing: 12, runSpacing: 4, children: [
+    return Wrap(spacing: 8, runSpacing: 8, children: [
       ...chips,
-      if (unscheduled > 0) Text('$unscheduled without schedule'),
+      if (unscheduled > 0)
+        ActionChip(
+          label: Text('$unscheduled condition / custom'),
+          onPressed: () => _showUnscheduledSheet(context),
+        ),
     ]);
   }
 }

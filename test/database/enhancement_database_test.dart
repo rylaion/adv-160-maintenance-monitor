@@ -657,8 +657,8 @@ void main() {
         final parts = await catalogRepo.watchParts().first;
         expect(parts.length, greaterThanOrEqualTo(20));
 
-        final belt = parts.firstWhere((p) => p.partNumber == '23100-K0W-N01');
-        expect(belt.officialName, 'Drive V-Belt');
+        final belt = parts.firstWhere((p) => p.partNumber == '23100-K1Z-N21');
+        expect(belt.officialName, 'BELT, DRIVE');
 
         await upgradedDb.close();
       } finally {

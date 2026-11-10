@@ -99,15 +99,14 @@ void main() {
           reason: 'Odometer should have updated from trip ending odometer');
 
       // 4. Step 2: User opens Parts Catalogue to find genuine Drive V-Belt
-      final searchResults =
-          await catalogRepo.watchParts(query: 'Drive V-Belt').first;
+      final searchResults = await catalogRepo.watchParts(query: 'BELT').first;
       expect(searchResults.isNotEmpty, isTrue);
 
       final oemBelt =
-          searchResults.firstWhere((p) => p.partNumber == '23100-K0W-N01');
-      expect(oemBelt.officialName, 'Drive V-Belt');
+          searchResults.firstWhere((p) => p.partNumber == '23100-K1Z-N21');
+      expect(oemBelt.officialName, 'BELT, DRIVE');
       expect(oemBelt.diagramNumber, 'E-17');
-      expect(oemBelt.referenceNumber, 3);
+      expect(oemBelt.referenceNumber, 7);
       expect(oemBelt.maintenanceItemId, isNotNull);
 
       // 5. Step 3: User records replacement using the OEM Part info
@@ -145,7 +144,7 @@ void main() {
       expect(savedRecord.action, MaintenanceAction.replacement);
       expect(savedRecord.odometerKm, 10250);
       expect(savedRecord.parts.length, 1);
-      expect(savedRecord.parts.first.part.partNumber, '23100-K0W-N01');
+      expect(savedRecord.parts.first.part.partNumber, '23100-K1Z-N21');
 
       // 7. Step 5: Active CVT setup synchronization
       await cvtRepo.updateConfiguration(
@@ -163,7 +162,7 @@ void main() {
       expect(updatedCvt!.installedOdometerKm, 10250,
           reason:
               'CVT installed odometer should now reflect the service at 10,250 km');
-      expect(updatedCvt.beltBrandPartNumber, '23100-K0W-N01');
+      expect(updatedCvt.beltBrandPartNumber, '23100-K1Z-N21');
       expect(updatedCvt.notes, contains('replaced with genuine Honda OEM'));
     });
   });

@@ -22,25 +22,25 @@ void main() {
     test('Seeded catalogue contains verified official Honda OEM parts',
         () async {
       final parts = await repo.watchParts().first;
-      expect(parts.length, greaterThanOrEqualTo(20));
+      expect(parts.length, greaterThanOrEqualTo(600));
 
-      final belt = parts.firstWhere((p) => p.partNumber == '23100-K0W-N01');
-      expect(belt.officialName, 'Drive V-Belt');
+      final belt = parts.firstWhere((p) => p.partNumber == '23100-K1Z-N21');
+      expect(belt.officialName, 'BELT, DRIVE');
       expect(belt.category, 'CVT / Transmission');
       expect(belt.diagramNumber, 'E-17');
-      expect(belt.referenceNumber, 3);
+      expect(belt.referenceNumber, 7);
       expect(belt.maintenanceItemId, isNotNull);
     });
 
     test('Search by partial part number matches with or without hyphens',
         () async {
       // With hyphen partial
-      final withHyphen = await repo.watchParts(query: '23100-K0W').first;
-      expect(withHyphen.any((p) => p.partNumber == '23100-K0W-N01'), isTrue);
+      final withHyphen = await repo.watchParts(query: '23100-K1Z').first;
+      expect(withHyphen.any((p) => p.partNumber == '23100-K1Z-N21'), isTrue);
 
       // Without hyphens
-      final withoutHyphen = await repo.watchParts(query: '23100K0WN01').first;
-      expect(withoutHyphen.any((p) => p.partNumber == '23100-K0W-N01'), isTrue);
+      final withoutHyphen = await repo.watchParts(query: '23100K1ZN21').first;
+      expect(withoutHyphen.any((p) => p.partNumber == '23100-K1Z-N21'), isTrue);
 
       // Raw code
       final k0wResults = await repo.watchParts(query: 'K0W').first;
@@ -48,13 +48,14 @@ void main() {
     });
 
     test('Search by part name or assembly matches correctly', () async {
-      final brakePads = await repo.watchParts(query: 'Brake Pad').first;
+      final brakePads = await repo.watchParts(query: 'PAD SET').first;
       expect(brakePads.length, greaterThanOrEqualTo(2));
-      expect(brakePads.any((p) => p.officialName.contains('Front')), isTrue);
-      expect(brakePads.any((p) => p.officialName.contains('Rear')), isTrue);
+      expect(brakePads.any((p) => p.officialName.contains('FR')), isTrue);
+      expect(brakePads.any((p) => p.officialName.contains('RR')), isTrue);
 
-      final airCleaner = await repo.watchParts(query: 'Air Cleaner').first;
-      expect(airCleaner.any((p) => p.partNumber == '17210-K0W-N00'), isTrue);
+      final airCleaner = await repo.watchParts(query: '17220-K2S-N00').first;
+      expect(airCleaner.isNotEmpty, isTrue);
+      expect(airCleaner.first.officialName, contains('ELEMENT SET'));
     });
 
     test('Filter by category returns only parts belonging to that category',
@@ -88,35 +89,52 @@ void main() {
 
       expect(
           e17Parts.any(
-              (p) => p.referenceNumber == 1 && p.partNumber == '22011-K0W-N00'),
+              (p) => p.referenceNumber == 1 && p.partNumber == '22100-K0W-NA0'),
           isTrue);
       expect(
           e17Parts.any(
-              (p) => p.referenceNumber == 3 && p.partNumber == '23100-K0W-N01'),
+              (p) => p.referenceNumber == 7 && p.partNumber == '23100-K1Z-N21'),
           isTrue);
       expect(
           e17Parts.any(
-              (p) => p.referenceNumber == 5 && p.partNumber == '22123-K0W-N00'),
+              (p) => p.referenceNumber == 8 && p.partNumber == '23205-K0W-NA0'),
           isTrue);
     });
 
-    test('Diagram F-10 is seeded and links to Front Wheel components',
+    test('Official 54 diagrams are seeded with high-res image asset paths',
         () async {
       final diagrams = await repo.watchDiagrams().first;
-      expect(diagrams.any((d) => d.diagramCode == 'F-10'), isTrue);
+      expect(diagrams.length, 54);
 
+      // Verify F-10 is Steering Stem
       final f10 = diagrams.firstWhere((d) => d.diagramCode == 'F-10');
-      expect(f10.title, contains('Front Wheel'));
+      expect(f10.title, contains('STEERING STEM'));
+      expect(f10.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/diagrams/F-10.png');
 
       final f10Parts = await repo.getPartsForDiagram('F-10');
       expect(f10Parts.isNotEmpty, isTrue);
       expect(
-          f10Parts.any((p) => p.partNumber == '45351-K0W-N01'), isTrue); // Disk
+          f10Parts.any((p) => p.partNumber == '50301-GN5-901'), isTrue); // Race
       expect(
-          f10Parts.any((p) => p.partNumber == '44711-K0W-N01'), isTrue); // Tire
+          f10Parts.any((p) => p.partNumber == '53219-K0W-N00'), isTrue); // Stem
+
+      // Verify F-20-40 is Front Wheel
+      final f20 = diagrams.firstWhere((d) => d.diagramCode == 'F-20-40');
+      expect(f20.title, contains('FRONT WHEEL'));
+      expect(f20.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/diagrams/F-20-40.png');
+
+      final f20Parts = await repo.getPartsForDiagram('F-20-40');
+      expect(f20Parts.isNotEmpty, isTrue);
+      expect(
+          f20Parts.any((p) => p.partNumber == '45351-K0W-N01'), isTrue); // Disk
+      expect(
+          f20Parts.any((p) => p.partNumber == '44711-K0W-N01'), isTrue); // Tire
     });
 
-    test('Record Replacement URI encoding produces valid URI without syntax errors',
+    test(
+        'Record Replacement URI encoding produces valid URI without syntax errors',
         () async {
       final part = await repo.getPartByPartNumber('45351-K0W-N01');
       expect(part, isNotNull);
@@ -153,15 +171,16 @@ void main() {
       expect(parsed.queryParameters['brand'], 'Honda Genuine OEM');
     });
 
-    test('Model compatibility reflects verified 2023 Honda ADV 160 fitment',
+    test(
+        'Model compatibility reflects verified 2022-2023 Honda ADV 160 fitment',
         () async {
-      final belt = await repo.getPartByPartNumber('23100-K0W-N01');
+      final belt = await repo.getPartByPartNumber('23100-K1Z-N21');
       expect(belt, isNotNull);
       expect(belt!.compatibilities.isNotEmpty, isTrue);
 
       final compat = belt.compatibilities.first;
       expect(compat.modelName, 'Honda ADV 160');
-      expect(compat.modelCode, 'K0W');
+      expect(compat.modelCode, 'ADV160AP');
       expect(compat.startYear, 2022);
       expect(compat.regionalVariant, contains('Philippines'));
     });

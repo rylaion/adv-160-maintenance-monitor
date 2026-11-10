@@ -140,7 +140,7 @@ class _ExplodedDiagramViewerScreenState
                 child: InteractiveViewer(
                   transformationController: _transformController,
                   minScale: 0.5,
-                  maxScale: 4.0,
+                  maxScale: 8.0,
                   boundaryMargin: const EdgeInsets.all(40),
                   child: Center(
                     child: _DiagramGraphicView(
@@ -299,18 +299,19 @@ class _DiagramGraphicView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final imagePath = diagramInfo?.imageAssetPath;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
 
     return Container(
-      width: 380,
-      constraints: const BoxConstraints(minHeight: 320),
-      margin: const EdgeInsets.all(16),
+      width: 480,
+      constraints: const BoxConstraints(minHeight: 300),
+      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: hasImage ? Colors.white : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -320,21 +321,24 @@ class _DiagramGraphicView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Background technical blueprint grid
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _BlueprintGridPainter(
-                  lineColor: theme.colorScheme.outlineVariant.withOpacity(0.25),
+            // Background technical blueprint grid when image is not present
+            if (!hasImage)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _BlueprintGridPainter(
+                    lineColor:
+                        theme.colorScheme.outlineVariant.withOpacity(0.25),
+                  ),
                 ),
               ),
-            ),
 
-            // If actual image asset is provided, display image with loading & error states
-            if (imagePath != null && imagePath.isNotEmpty)
+            // If actual image asset is provided, display high-resolution illustration
+            if (hasImage)
               Positioned.fill(
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                   errorBuilder: (ctx, err, stack) =>
                       _buildUnavailableNotice(context),
                   frameBuilder: (ctx, child, frame, wasSync) {
@@ -348,10 +352,11 @@ class _DiagramGraphicView extends StatelessWidget {
             else
               _buildUnavailableNotice(context),
 
-            // Hotspot Reference Callout Chips
-            for (final part in parts)
-              if (part.referenceNumber != null)
-                _buildHotspot(context, part.referenceNumber!),
+            // Hotspot Reference Callout Chips only shown when no native schematic image is available
+            if (!hasImage)
+              for (final part in parts)
+                if (part.referenceNumber != null)
+                  _buildHotspot(context, part.referenceNumber!),
           ],
         ),
       ),

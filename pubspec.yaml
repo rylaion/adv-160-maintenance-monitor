@@ -52,3 +52,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
+    - assets/images/parts_catalog/adv160_2023/diagrams/
+    - assets/data/

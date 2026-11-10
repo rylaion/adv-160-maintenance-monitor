@@ -14,3 +14,4 @@ These reusable maintenance tools parse and extract data from the official Honda 
 
 3. **`verify_all_pdf_diagrams.py`**
    - Audits all 54 diagram blocks and multi-page sequences directly against the PDF text and image assets.
+

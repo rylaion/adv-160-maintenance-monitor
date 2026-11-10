@@ -14,11 +14,13 @@ class ItemInfo {
     required this.name,
     required this.categoryId,
     this.instructions,
+    this.isUserDefined = false,
   });
   final int id;
   final String name;
   final int categoryId;
   final String? instructions;
+  final bool isUserDefined;
 }
 
 /// A non-voided maintenance record.

@@ -253,11 +253,5 @@ class MaintenanceRecordCard extends ConsumerWidget {
     );
   }
 
-  static String _actionLabel(MaintenanceAction a) => switch (a) {
-        MaintenanceAction.inspection => 'Inspection',
-        MaintenanceAction.cleaning => 'Cleaning',
-        MaintenanceAction.adjustment => 'Adjustment',
-        MaintenanceAction.replacement => 'Replacement',
-        MaintenanceAction.lubrication => 'Lubrication',
-      };
+  static String _actionLabel(MaintenanceAction a) => a.label;
 }

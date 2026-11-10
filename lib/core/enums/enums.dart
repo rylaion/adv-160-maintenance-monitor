@@ -69,10 +69,22 @@ enum MaintenanceAction {
   cleaning('CLEANING'),
   adjustment('ADJUSTMENT'),
   replacement('REPLACEMENT'),
-  lubrication('LUBRICATION');
+  repair('REPAIR'),
+  lubrication('LUBRICATION'),
+  other('OTHER');
 
   const MaintenanceAction(this.code);
   final String code;
+
+  String get label => switch (this) {
+        MaintenanceAction.inspection => 'Inspected',
+        MaintenanceAction.cleaning => 'Cleaned',
+        MaintenanceAction.adjustment => 'Adjusted',
+        MaintenanceAction.replacement => 'Replaced',
+        MaintenanceAction.repair => 'Repaired',
+        MaintenanceAction.lubrication => 'Lubricated',
+        MaintenanceAction.other => 'Other',
+      };
 
   static MaintenanceAction fromCode(String code) => values.firstWhere(
       (e) => e.code == code,
@@ -153,10 +165,15 @@ extension MaintenanceStatusSeverity on MaintenanceStatus {
 extension ActionCodeSatisfaction on ActionCode {
   bool isSatisfiedBy(MaintenanceAction action) => switch (this) {
         ActionCode.inspect => action == MaintenanceAction.inspection ||
+            action == MaintenanceAction.cleaning ||
             action == MaintenanceAction.adjustment ||
-            action == MaintenanceAction.replacement,
+            action == MaintenanceAction.replacement ||
+            action == MaintenanceAction.repair ||
+            action == MaintenanceAction.lubrication ||
+            action == MaintenanceAction.other,
         ActionCode.clean => action == MaintenanceAction.cleaning ||
-            action == MaintenanceAction.replacement,
+            action == MaintenanceAction.replacement ||
+            action == MaintenanceAction.repair,
         ActionCode.replace => action == MaintenanceAction.replacement,
       };
 

@@ -8,7 +8,7 @@ import '../../../core/utils/date_utils.dart';
 import '../../../shared/widgets/item_status_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../domain/maintenance_overview.dart';
-import 'maintenance_history_screen.dart';
+import 'maintenance_item_detail_screen.dart';
 import 'maintenance_view_model.dart';
 import 'status_text.dart';
 
@@ -39,6 +39,21 @@ class MaintenanceScreen extends ConsumerWidget {
             ],
           ),
           actions: [
+            if (async.valueOrNull?.snapshot.motorcycle != null)
+              IconButton(
+                key: const Key('new_custom_item_button'),
+                tooltip: 'Add custom maintenance item',
+                icon: const Icon(Icons.playlist_add),
+                onPressed: () {
+                  final o = async.valueOrNull!;
+                  showCreateCustomItemDialog(
+                    context: context,
+                    ref: ref,
+                    motorcycleId: o.snapshot.motorcycle!.id,
+                    categories: o.snapshot.categories,
+                  );
+                },
+              ),
             IconButton(
               tooltip: 'Parts management',
               icon: const Icon(Icons.inventory_2_outlined),
@@ -253,62 +268,66 @@ class _CheckpointTaskTile extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${task.item.name} · ${task.actionCode.label} (${task.actionCode.code})',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    [
-                      'Category: ${task.category.name}',
-                      if (dueKm != null)
-                        'Scheduled at ${StatusText.km(dueKm)}'
-                            '${remKm != null && !task.isCompleted ? ' (${StatusText.remainingKm(remKm)})' : ''}',
-                      if (completed != null)
-                        'Completed: ${AppDates.formatDate(completed.date)} at ${StatusText.km(completed.odometerKm)}',
-                    ].join('\n'),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                StatusChip(status: task.status),
-                if (!task.isCompleted)
-                  InkWell(
-                    onTap: () => context.push(
-                      '/maintenance/record?itemId=${task.item.id}'
-                      '&action=$defaultAction'
-                      '${dueKm != null ? '&km=$dueKm' : ''}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/maintenance/item/${task.item.id}'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${task.item.name} · ${task.actionCode.label} (${task.actionCode.code})',
+                      style: theme.textTheme.titleSmall,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Complete',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                    const SizedBox(height: 4),
+                    Text(
+                      [
+                        'Category: ${task.category.name}',
+                        if (dueKm != null)
+                          'Scheduled at ${StatusText.km(dueKm)}'
+                              '${remKm != null && !task.isCompleted ? ' (${StatusText.remainingKm(remKm)})' : ''}',
+                        if (completed != null)
+                          'Completed: ${AppDates.formatDate(completed.date)} at ${StatusText.km(completed.odometerKm)}',
+                      ].join('\n'),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusChip(status: task.status),
+                  if (!task.isCompleted)
+                    InkWell(
+                      onTap: () => context.push(
+                        '/maintenance/record?itemId=${task.item.id}'
+                        '&action=$defaultAction'
+                        '${dueKm != null ? '&km=$dueKm' : ''}',
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Complete',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -320,106 +339,21 @@ class _TrackerItemCard extends ConsumerWidget {
   final ItemStatus status;
   final int? motorcycleId;
 
-  Future<void> _showCustomRuleDialog(
-      BuildContext context, WidgetRef ref) async {
-    final bikeId = motorcycleId;
-    if (bikeId == null) return;
-    final kmCtl = TextEditingController();
-    final monthsCtl = TextEditingController();
-    final notesCtl = TextEditingController();
-    var action = ActionCode.replace;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: Text('Custom interval · ${status.item.name}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<ActionCode>(
-                value: action,
-                decoration: const InputDecoration(labelText: 'Action'),
-                items: [
-                  for (final a in ActionCode.values)
-                    DropdownMenuItem(value: a, child: Text(a.label)),
-                ],
-                onChanged: (v) {
-                  if (v != null) setState(() => action = v);
-                },
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: kmCtl,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Interval (km, optional)'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: monthsCtl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'Interval (months, optional)'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: notesCtl,
-                decoration: const InputDecoration(labelText: 'Notes'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel')),
-            FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Save Rule')),
-          ],
-        ),
-      ),
-    );
-    if (confirmed != true) return;
-    final err =
-        await ref.read(maintenanceActionsProvider.notifier).addCustomRule(
-              motorcycleId: bikeId,
-              itemId: status.item.id,
-              action: action,
-              intervalKm: int.tryParse(kmCtl.text.trim()),
-              intervalMonths: int.tryParse(monthsCtl.text.trim()),
-              notes: notesCtl.text,
-            );
-    if (context.mounted && err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-    }
-  }
-
-  void _showItemDetailsSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.75,
-        builder: (_, controller) => _ItemDetailSheet(
-          status: status,
-          scrollController: controller,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCustomOnlyItem = status.item.name == 'Fuel Filter';
+    final isCustomOnlyItem = status.item.isUserDefined;
+    final customRule = status.evaluation.ruleEvaluations
+        .map((r) => r.rule)
+        .where((r) => !r.isManufacturer && r.isActive)
+        .firstOrNull;
+    final bikeId = motorcycleId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showItemDetailsSheet(context),
-          child: ItemStatusCard(status: status),
+        ItemStatusCard(
+          status: status,
+          onTap: () => context.push('/maintenance/item/${status.item.id}'),
         ),
         if (isCustomOnlyItem)
           Padding(
@@ -432,14 +366,24 @@ class _TrackerItemCard extends ConsumerWidget {
           ),
         Padding(
           padding: const EdgeInsets.only(right: 8, bottom: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 4,
             children: [
-              TextButton.icon(
-                onPressed: () => _showCustomRuleDialog(context, ref),
-                icon: const Icon(Icons.tune, size: 16),
-                label: const Text('Custom Interval'),
-              ),
+              if (bikeId != null)
+                TextButton.icon(
+                  onPressed: () => showCustomIntervalDialog(
+                    context: context,
+                    ref: ref,
+                    motorcycleId: bikeId,
+                    status: status,
+                    existingCustomRule: customRule,
+                  ),
+                  icon: const Icon(Icons.tune, size: 16),
+                  label: Text(customRule == null
+                      ? 'Custom Interval'
+                      : 'Edit Custom Interval'),
+                ),
               TextButton.icon(
                 onPressed: () => context
                     .push('/maintenance/record?itemId=${status.item.id}'),
@@ -448,71 +392,6 @@ class _TrackerItemCard extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ItemDetailSheet extends ConsumerWidget {
-  const _ItemDetailSheet({
-    required this.status,
-    required this.scrollController,
-  });
-
-  final ItemStatus status;
-  final ScrollController scrollController;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final eval = status.evaluation;
-    final historyAsync = ref.watch(itemHistoryProvider(status.item.id));
-    final last = eval.lastService;
-
-    return ListView(
-      controller: scrollController,
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(status.item.name, style: theme.textTheme.titleLarge),
-            ),
-            if (eval.hasSchedule) StatusChip(status: eval.status),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          status.item.instructions ??
-              'Instructions: Refer to Honda ADV160 Owner\'s Manual (32K0WA100).',
-          style: theme.textTheme.bodySmall,
-        ),
-        const Divider(height: 24),
-        Text(
-            'Last service date: ${last == null ? '—' : AppDates.formatDate(last.date)}'),
-        Text(
-            'Last service mileage: ${last == null ? '—' : StatusText.km(last.odometerKm)}'),
-        if (eval.next != null) ...[
-          for (final l in StatusText.nextLines(eval.next)) Text(l),
-          if (eval.next!.remainingKm != null)
-            Text('Remaining km: ${StatusText.km(eval.next!.remainingKm!)}'),
-          if (eval.next!.remainingDays != null)
-            Text('Remaining days: ${eval.next!.remainingDays}'),
-        ],
-        const SizedBox(height: 16),
-        Text('Service history', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        historyAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Error: $e'),
-          data: (records) => records.isEmpty
-              ? const Text('No records for this item yet.')
-              : Column(
-                  children: [
-                    for (final r in records) MaintenanceRecordCard(record: r),
-                  ],
-                ),
         ),
       ],
     );

@@ -66,9 +66,17 @@ class MaintenanceCalculator {
     final needsBaseline = results.any((r) => r.missingBaseline);
     final skipped = results.fold<int>(0, (a, r) => a + r.skippedBeforeTracking);
 
+    // If the user has configured active custom interval rule(s) on this item,
+    // use those custom rules to drive the item's primary next due checkpoint
+    // and status while keeping all rules (Honda + Custom) in ruleEvaluations.
+    final customComputable =
+        computable.where((r) => !r.rule.isManufacturer).toList();
+    final effectiveComputable =
+        customComputable.isNotEmpty ? customComputable : computable;
+
     var status = MaintenanceStatus.good;
     RuleEvaluation? next;
-    for (final r in computable) {
+    for (final r in effectiveComputable) {
       if (next == null || _isMoreUrgent(r, next)) next = r;
       if (r.status.severity > status.severity) status = r.status;
     }
@@ -352,10 +360,28 @@ class MaintenanceCalculator {
     int? baselineKm,
     DateTime? baselineDate,
   ) {
-    final last = _latest(
-        events.where((e) => rule.actionCode.isSatisfiedBy(e.action)).toList());
-    final fromKm = last?.odometerKm ?? baselineKm ?? 0;
-    final fromDate = last?.date ?? baselineDate;
+    final matchingEvents = events
+        .where((e) =>
+            rule.actionCode.isSatisfiedBy(e.action) || !rule.isManufacturer)
+        .toList();
+    final latestEvent = _latest(matchingEvents);
+
+    // If the rule has an explicit lastCompletedKm baseline (for custom rules)
+    // and either no service event exists or the baseline is newer, use it so
+    // the next due calculation is always anchored to the last completed service
+    // and never to the current odometer reading.
+    ServiceEvent? last = latestEvent;
+    if (rule.lastCompletedKm != null &&
+        (last == null || rule.lastCompletedKm! > last.odometerKm)) {
+      last = ServiceEvent(
+        date: rule.lastCompletedDate ?? today,
+        odometerKm: rule.lastCompletedKm!,
+        action: rule.actionCode.defaultMaintenanceAction,
+      );
+    }
+
+    final fromKm = last?.odometerKm ?? rule.lastCompletedKm ?? 0;
+    final fromDate = last?.date ?? rule.lastCompletedDate ?? baselineDate;
 
     final dueKm = rule.intervalKm == null ? null : fromKm + rule.intervalKm!;
     DateTime? dueDate;
@@ -384,7 +410,21 @@ class MaintenanceCalculator {
         dueKm: dueKm,
         dueDate: dueDate,
         sequence: 0);
-    final status = _statusFor(remKm, remDays);
+
+    final effectiveUpcomingKm = rule.warningKm ??
+        (!rule.isManufacturer && rule.intervalKm != null
+            ? (rule.intervalKm! * 0.25)
+                .round()
+                .clamp(thresholds.upcomingKm, 5000)
+            : thresholds.upcomingKm);
+    final effectiveUpcomingDays = rule.warningDays ?? thresholds.upcomingDays;
+
+    final status = _statusFor(
+      remKm,
+      remDays,
+      upcomingKm: effectiveUpcomingKm,
+      upcomingDays: effectiveUpcomingDays,
+    );
     return RuleEvaluation(
       rule: rule,
       status: status,
@@ -429,7 +469,14 @@ class MaintenanceCalculator {
       due == null ? null : AppDates.daysBetween(today, due);
 
   /// Either limit triggers: the worst of the km and day states wins.
-  MaintenanceStatus _statusFor(int? remKm, int? remDays) {
+  MaintenanceStatus _statusFor(
+    int? remKm,
+    int? remDays, {
+    int? upcomingKm,
+    int? upcomingDays,
+  }) {
+    final upKm = upcomingKm ?? thresholds.upcomingKm;
+    final upDays = upcomingDays ?? thresholds.upcomingDays;
     if ((remKm != null && remKm < 0) || (remDays != null && remDays < 0)) {
       return MaintenanceStatus.overdue;
     }
@@ -437,8 +484,8 @@ class MaintenanceCalculator {
         (remDays != null && remDays <= thresholds.dueDays)) {
       return MaintenanceStatus.due;
     }
-    if ((remKm != null && remKm <= thresholds.upcomingKm) ||
-        (remDays != null && remDays <= thresholds.upcomingDays)) {
+    if ((remKm != null && remKm <= upKm) ||
+        (remDays != null && remDays <= upDays)) {
       return MaintenanceStatus.upcoming;
     }
     return MaintenanceStatus.good;

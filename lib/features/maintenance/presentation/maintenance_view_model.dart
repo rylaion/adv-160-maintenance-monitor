@@ -73,26 +73,72 @@ class MaintenanceActions extends AsyncNotifier<void> {
       _run(() => ref.read(maintenanceRepositoryProvider).voidRecord(recordId));
 
   Future<String?> addCustomRule({
+    int? ruleId,
     required int motorcycleId,
     required int itemId,
     required ActionCode action,
     int? intervalKm,
     int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+    DateTime? lastCompletedDate,
     String? notes,
   }) =>
-      _run(() => ref.read(maintenanceRepositoryProvider).addCustomRule(
+      _run(() => ref.read(maintenanceRepositoryProvider).saveCustomRule(
+            ruleId: ruleId,
             motorcycleId: motorcycleId,
             itemId: itemId,
             action: action,
             intervalKm: intervalKm,
             intervalMonths: intervalMonths,
+            warningKm: warningKm,
+            warningDays: warningDays,
+            lastCompletedKm: lastCompletedKm,
+            lastCompletedDate: lastCompletedDate,
             notes: notes,
           ));
+
+  Future<String?> createCustomItemAndRule({
+    required int motorcycleId,
+    required String itemName,
+    int? categoryId,
+    required ActionCode action,
+    int? intervalKm,
+    int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+    DateTime? lastCompletedDate,
+    String? notes,
+  }) =>
+      _run(
+          () => ref.read(maintenanceRepositoryProvider).createCustomItemAndRule(
+                motorcycleId: motorcycleId,
+                itemName: itemName,
+                categoryId: categoryId,
+                action: action,
+                intervalKm: intervalKm,
+                intervalMonths: intervalMonths,
+                warningKm: warningKm,
+                warningDays: warningDays,
+                lastCompletedKm: lastCompletedKm,
+                lastCompletedDate: lastCompletedDate,
+                notes: notes,
+              ));
+
+  Future<String?> deleteCustomRule(int ruleId) => _run(
+      () => ref.read(maintenanceRepositoryProvider).deleteCustomRule(ruleId));
+
+  Future<String?> deleteCustomItem(int itemId) => _run(
+      () => ref.read(maintenanceRepositoryProvider).deleteCustomItem(itemId));
 
   Future<String?> _run(Future<void> Function() body) async {
     state = const AsyncLoading();
     try {
       await body();
+      ref.invalidate(maintenanceOverviewProvider);
+      ref.invalidate(maintenanceHistoryProvider);
       state = const AsyncData(null);
       return null;
     } on UserFacingException catch (e) {

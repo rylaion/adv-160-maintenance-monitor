@@ -7,6 +7,8 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/money.dart';
 import '../../../shared/providers/providers.dart';
 import '../../../shared/widgets/photo_attachments_field.dart';
+import '../../components/domain/component_models.dart';
+import '../../components/presentation/components_view_model.dart';
 import '../../motorcycle/presentation/motorcycle_view_model.dart';
 import '../../parts/domain/part_models.dart';
 import '../data/maintenance_repository.dart';
@@ -75,13 +77,16 @@ class _PartDraft {
 class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _odometer = TextEditingController();
+  final _measurementValue = TextEditingController();
+  final _measurementUnit = TextEditingController(text: 'mm');
   final _laborPesos = TextEditingController(text: '0');
   final _totalPesos = TextEditingController(text: '0');
   final _provider = TextEditingController();
   final _notes = TextEditingController();
 
   int? _itemId;
-  MaintenanceAction _action = MaintenanceAction.replacement;
+  MaintenanceAction _action = MaintenanceAction.inspection;
+  String? _measurementPosition;
   late DateTime _date;
   bool _manualTotal = false;
   final List<_PartDraft> _parts = [];
@@ -106,7 +111,15 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
 
   @override
   void dispose() {
-    for (final c in [_odometer, _laborPesos, _totalPesos, _provider, _notes]) {
+    for (final c in [
+      _odometer,
+      _measurementValue,
+      _measurementUnit,
+      _laborPesos,
+      _totalPesos,
+      _provider,
+      _notes,
+    ]) {
       c.dispose();
     }
     for (final p in _parts) {
@@ -218,12 +231,27 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
         ),
     ];
 
+    final measText = _measurementValue.text.trim();
+    final double? measVal = measText.isEmpty ? null : double.tryParse(measText);
+    final selectedItem = await ref
+        .read(maintenanceOverviewProvider.future)
+        .then((o) => o.itemById(itemId));
+    final matchedSpecs = selectedItem == null
+        ? const <ComponentSpecDefinition>[]
+        : ComponentSpecDefinition.specsForItem(
+            itemId: itemId,
+            itemName: selectedItem.name,
+          );
+    final mType = matchedSpecs.isNotEmpty
+        ? matchedSpecs.first.measurementType
+        : MeasurementType.generalMeasurement;
+
     final input = NewMaintenanceRecord(
       motorcycleId: bike.id,
       itemId: itemId,
       action: _action,
       date: _date,
-      odometerKm: int.parse(_odometer.text.trim()),
+      odometerKm: int.parse(_odometer.text.replaceAll(',', '').trim()),
       laborCostCentavos: labor,
       totalCostCentavos: total,
       serviceProvider: _provider.text,
@@ -231,6 +259,10 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
       parts: partInputs,
       photoPaths: List.of(_newPhotos),
       keepAttachmentIds: _keptAttachmentIds.toList(),
+      measurementValue: measVal,
+      measurementUnit: _measurementUnit.text.trim(),
+      measurementType: mType,
+      measurementPosition: _measurementPosition,
     );
 
     final notifier = ref.read(maintenanceActionsProvider.notifier);
@@ -239,6 +271,7 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
         : await notifier.editRecord(widget.editRecordId!, input);
     if (!mounted) return;
     if (err == null) {
+      ref.invalidate(componentMeasurementsProvider);
       if (context.canPop()) context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
@@ -279,26 +312,53 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
               o.currentKm != null) {
             _odometer.text = '${o.currentKm}';
           }
+          final selectedItem = items.where((i) => i.id == _itemId).firstOrNull;
+          final itemSpecs = selectedItem == null
+              ? const <ComponentSpecDefinition>[]
+              : ComponentSpecDefinition.specsForItem(
+                  itemId: selectedItem.id,
+                  itemName: selectedItem.name,
+                );
+          final needsPosition = itemSpecs.any((s) => s.position != null);
+          if (needsPosition && _measurementPosition == null) {
+            _measurementPosition = ComponentPosition.front.code;
+          }
+
           return Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                DropdownButtonFormField<int>(
-                  value: _itemId,
-                  decoration:
-                      const InputDecoration(labelText: 'Maintenance item'),
-                  items: [
-                    for (final i in items)
-                      DropdownMenuItem(value: i.id, child: Text(i.name)),
-                  ],
-                  onChanged: (v) => setState(() => _itemId = v),
-                ),
+                if (widget.initialItemId != null && selectedItem != null)
+                  InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Maintenance item / component',
+                    ),
+                    child: Text(
+                      selectedItem.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  )
+                else
+                  DropdownButtonFormField<int>(
+                    value: _itemId,
+                    decoration: const InputDecoration(
+                        labelText: 'Maintenance item / component'),
+                    items: [
+                      for (final i in items)
+                        DropdownMenuItem(value: i.id, child: Text(i.name)),
+                    ],
+                    onChanged: (v) => setState(() {
+                      _itemId = v;
+                      _measurementPosition = null;
+                    }),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<MaintenanceAction>(
+                  key: const Key('maintenance_action_dropdown'),
                   value: _action,
                   decoration:
-                      const InputDecoration(labelText: 'Action performed'),
+                      const InputDecoration(labelText: 'Maintenance action'),
                   items: [
                     for (final a in MaintenanceAction.values)
                       DropdownMenuItem(
@@ -319,17 +379,83 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
                   onTap: _pickDate,
                 ),
                 TextFormField(
+                  key: const Key('maintenance_odometer_field'),
                   controller: _odometer,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Odometer (km)'),
+                  decoration: const InputDecoration(
+                      labelText: 'Current odometer reading (km)'),
                   validator: (v) {
-                    final n = int.tryParse((v ?? '').trim());
+                    final n =
+                        int.tryParse((v ?? '').replaceAll(',', '').trim());
                     if (n == null || n < 0) {
                       return 'Enter a non-negative odometer in km';
                     }
                     return null;
                   },
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        key: const Key('maintenance_measurement_field'),
+                        controller: _measurementValue,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Actual measurement (optional)',
+                          hintText: 'e.g. 4.5 or 19.2',
+                        ),
+                        validator: (v) {
+                          final raw = (v ?? '').trim();
+                          if (raw.isEmpty) return null;
+                          final d = double.tryParse(raw);
+                          if (d == null || d <= 0) {
+                            return 'Enter a positive measurement';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        key: const Key('maintenance_measurement_unit_dropdown'),
+                        value: const ['mm', 'km', 'V', 'kPa', 'rpm']
+                                .contains(_measurementUnit.text.trim())
+                            ? _measurementUnit.text.trim()
+                            : 'mm',
+                        decoration: const InputDecoration(labelText: 'Unit'),
+                        items: const [
+                          DropdownMenuItem(value: 'mm', child: Text('mm')),
+                          DropdownMenuItem(value: 'km', child: Text('km')),
+                          DropdownMenuItem(value: 'V', child: Text('V')),
+                          DropdownMenuItem(value: 'kPa', child: Text('kPa')),
+                          DropdownMenuItem(value: 'rpm', child: Text('rpm')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => _measurementUnit.text = v);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (needsPosition) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _measurementPosition,
+                    decoration: const InputDecoration(
+                        labelText: 'Component position (Front / Rear)'),
+                    items: [
+                      for (final p in ComponentPosition.values)
+                        DropdownMenuItem(value: p.code, child: Text(p.label)),
+                    ],
+                    onChanged: (v) => setState(() => _measurementPosition = v),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _provider,
@@ -427,13 +553,7 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
     );
   }
 
-  static String _actionLabel(MaintenanceAction a) => switch (a) {
-        MaintenanceAction.inspection => 'Inspection',
-        MaintenanceAction.cleaning => 'Cleaning',
-        MaintenanceAction.adjustment => 'Adjustment',
-        MaintenanceAction.replacement => 'Replacement',
-        MaintenanceAction.lubrication => 'Lubrication',
-      };
+  static String _actionLabel(MaintenanceAction a) => a.label;
 }
 
 class _PartDraftCard extends StatelessWidget {

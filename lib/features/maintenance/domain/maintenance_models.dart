@@ -33,6 +33,10 @@ class RuleDef {
     this.sourcePage,
     this.intervalKm,
     this.intervalMonths,
+    this.warningKm,
+    this.warningDays,
+    this.lastCompletedKm,
+    this.lastCompletedDate,
     this.isVerified = false,
     this.isActive = true,
     this.notes,
@@ -51,6 +55,13 @@ class RuleDef {
   /// Ignored when [steps] is non-empty.
   final int? intervalKm;
   final int? intervalMonths;
+
+  /// Optional per-rule custom warning thresholds and initial baseline.
+  final int? warningKm;
+  final int? warningDays;
+  final int? lastCompletedKm;
+  final DateTime? lastCompletedDate;
+
   final bool isVerified;
   final bool isActive;
   final String? notes;

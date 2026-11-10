@@ -165,26 +165,28 @@ class _Body extends StatelessWidget {
         Text('Maintenance inspection summary',
             style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        _Summary(counts: o.statusCounts, unscheduled: o.unscheduled.length),
+        _Summary(
+          overview: o,
+          counts: o.statusCounts,
+          unscheduled: o.unscheduled.length,
+        ),
         if (o.overdue.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text('Overdue maintenance (${o.overdue.length})',
               style: theme.textTheme.titleMedium),
-          ...o.overdue
-              .map((i) => ItemStatusCard(status: i, showCategory: true)),
+          ...o.overdue.map((i) => _buildDashboardItemCard(context, o, i)),
         ],
         if (o.due.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text('Due maintenance (${o.due.length})',
               style: theme.textTheme.titleMedium),
-          ...o.due.map((i) => ItemStatusCard(status: i, showCategory: true)),
+          ...o.due.map((i) => _buildDashboardItemCard(context, o, i)),
         ],
         if (o.upcoming.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text('Upcoming maintenance (${o.upcoming.length})',
               style: theme.textTheme.titleMedium),
-          ...o.upcoming
-              .map((i) => ItemStatusCard(status: i, showCategory: true)),
+          ...o.upcoming.map((i) => _buildDashboardItemCard(context, o, i)),
         ],
         const SizedBox(height: 16),
         Text('Recently completed maintenance',
@@ -208,11 +210,12 @@ class _Body extends StatelessWidget {
                     leading: const Icon(Icons.task_alt),
                     title: Text(o.itemById(r.itemId)?.name ?? 'Item'),
                     subtitle: Text(
-                      '${r.action.code} · ${AppDates.formatDate(r.date)} '
+                      '${r.action.label} · ${AppDates.formatDate(r.date)} '
                       'at ${StatusText.km(r.odometerKm)}',
                     ),
                     trailing:
                         const StatusChip(status: MaintenanceStatus.completed),
+                    onTap: () => context.push('/maintenance/item/${r.itemId}'),
                   ),
               ],
             ),
@@ -227,6 +230,9 @@ class _Body extends StatelessWidget {
                   ? 'No maintenance recorded'
                   : '${lastItem?.name ?? 'Item'} · ${AppDates.formatDate(last.date)} '
                       'at ${StatusText.km(last.odometerKm)}'),
+              onTap: last == null
+                  ? null
+                  : () => context.push('/maintenance/item/${last.itemId}'),
             ),
             ListTile(
               leading: const Icon(Icons.payments_outlined),
@@ -236,6 +242,28 @@ class _Body extends StatelessWidget {
           ]),
         ),
       ],
+    );
+  }
+
+  Widget _buildDashboardItemCard(
+    BuildContext context,
+    MaintenanceOverview o,
+    ItemStatus i,
+  ) {
+    final defaultAction =
+        (i.evaluation.next?.next?.actionCode ?? ActionCode.inspect)
+            .defaultMaintenanceAction
+            .code;
+    final currentKm = o.currentKm;
+    return ItemStatusCard(
+      status: i,
+      showCategory: true,
+      onTap: () => context.push('/maintenance/item/${i.item.id}'),
+      onQuickLog: () => context.push(
+        '/maintenance/record?itemId=${i.item.id}'
+        '&action=$defaultAction'
+        '${currentKm != null ? '&km=$currentKm' : ''}',
+      ),
     );
   }
 }
@@ -333,9 +361,75 @@ class _Hint extends StatelessWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.counts, required this.unscheduled});
+  const _Summary({
+    required this.overview,
+    required this.counts,
+    required this.unscheduled,
+  });
+
+  final MaintenanceOverview overview;
   final Map<String, int> counts;
   final int unscheduled;
+
+  void _showStatusItemsSheet(BuildContext context, MaintenanceStatus s) {
+    final List<ItemStatus> list = switch (s) {
+      MaintenanceStatus.overdue ||
+      MaintenanceStatus.replacementRequired =>
+        overview.overdue,
+      MaintenanceStatus.due ||
+      MaintenanceStatus.inspectionRequired =>
+        overview.due,
+      MaintenanceStatus.upcoming => overview.upcoming,
+      MaintenanceStatus.completed => overview.completedItems,
+      MaintenanceStatus.good => overview.scheduled
+          .where((i) => i.evaluation.status == MaintenanceStatus.good)
+          .toList(),
+    };
+    if (list.isEmpty) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              '${s.label} Maintenance (${list.length})',
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            for (final item in list)
+              ItemStatusCard(
+                status: item,
+                showCategory: true,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/maintenance/item/${item.item.id}');
+                },
+                onQuickLog: () {
+                  Navigator.pop(ctx);
+                  final defaultAction =
+                      (item.evaluation.next?.next?.actionCode ??
+                              ActionCode.inspect)
+                          .defaultMaintenanceAction
+                          .code;
+                  final km = overview.currentKm;
+                  context.push(
+                    '/maintenance/record?itemId=${item.item.id}'
+                    '&action=$defaultAction'
+                    '${km != null ? '&km=$km' : ''}',
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -343,11 +437,18 @@ class _Summary extends StatelessWidget {
     for (final s in MaintenanceStatus.values) {
       final n = counts[s.code];
       if (n == null) continue;
-      chips.add(Row(mainAxisSize: MainAxisSize.min, children: [
-        StatusChip(status: s),
-        const SizedBox(width: 4),
-        Text('$n'),
-      ]));
+      chips.add(InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showStatusItemsSheet(context, s),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            StatusChip(status: s),
+            const SizedBox(width: 4),
+            Text('$n'),
+          ]),
+        ),
+      ));
     }
     if (chips.isEmpty) chips.add(const Text('No scheduled items'));
     return Wrap(spacing: 12, runSpacing: 4, children: [

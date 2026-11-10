@@ -6,6 +6,7 @@ import '../../../core/exceptions/user_facing_exception.dart';
 import '../../../core/services/attachment_service.dart';
 import '../../../core/services/expense_service.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../components/domain/component_models.dart';
 import '../../motorcycle/domain/motorcycle.dart';
 import '../../odometer/data/odometer_repository.dart';
 import '../../parts/data/parts_repository.dart';
@@ -29,6 +30,10 @@ class NewMaintenanceRecord {
     this.parts = const [],
     this.photoPaths = const [],
     this.keepAttachmentIds = const [],
+    this.measurementValue,
+    this.measurementUnit,
+    this.measurementType,
+    this.measurementPosition,
   });
 
   final int motorcycleId;
@@ -49,6 +54,12 @@ class NewMaintenanceRecord {
 
   /// When editing an existing record, existing attachment IDs to retain.
   final List<int> keepAttachmentIds;
+
+  /// Optional actual component measurement recorded during this service.
+  final double? measurementValue;
+  final String? measurementUnit;
+  final MeasurementType? measurementType;
+  final String? measurementPosition;
 }
 
 class MaintenanceException implements UserFacingException {
@@ -124,7 +135,8 @@ class MaintenanceRepository {
             id: i.id,
             name: i.name,
             categoryId: i.categoryId,
-            instructions: i.instructions))
+            instructions: i.instructions,
+            isUserDefined: i.isUserDefined || i.name == 'Fuel Filter'))
         .toList();
 
     final ruleRows = await _db.select(_db.maintenanceRules).get();
@@ -152,6 +164,10 @@ class MaintenanceRepository {
         sourcePage: r.sourcePage,
         intervalKm: r.intervalKm,
         intervalMonths: r.intervalMonths,
+        warningKm: r.warningKm,
+        warningDays: r.warningDays,
+        lastCompletedKm: r.lastCompletedKm,
+        lastCompletedDate: AppDates.parseDateOnly(r.lastCompletedDate),
         isVerified: r.isVerified,
         isActive: r.isActive,
         notes: r.notes,
@@ -376,6 +392,13 @@ class MaintenanceRepository {
     if (day.isAfter(AppDates.todayManila(_clock()))) {
       throw const MaintenanceException('Date cannot be in the future.');
     }
+    if (r.measurementValue != null &&
+        (r.measurementValue!.isNaN ||
+            r.measurementValue!.isInfinite ||
+            r.measurementValue! <= 0)) {
+      throw const MaintenanceException(
+          'Measurement value must be greater than zero.');
+    }
 
     final storedPhotos = r.photoPaths.isEmpty
         ? const <StoredPhoto>[]
@@ -392,6 +415,24 @@ class MaintenanceRepository {
             .getSingleOrNull();
         if (item == null) {
           throw const MaintenanceException('Maintenance item not found.');
+        }
+
+        if (supersedesId == null) {
+          final dup = await (_db.select(_db.maintenanceRecords)
+                ..where((t) =>
+                    t.motorcycleId.equals(r.motorcycleId) &
+                    t.itemId.equals(r.itemId) &
+                    t.action.equals(r.action.code) &
+                    t.performedDate.equals(AppDates.toIsoDate(day)) &
+                    t.odometerKm.equals(r.odometerKm) &
+                    t.voidedAt.isNull()))
+              .getSingleOrNull();
+          if (dup != null) {
+            throw const MaintenanceException(
+              'A duplicate maintenance record for this item, action, date, '
+              'and odometer already exists.',
+            );
+          }
         }
 
         List<AttachmentRow> keptAttachments = const [];
@@ -506,6 +547,29 @@ class MaintenanceRepository {
               ));
         }
 
+        if (r.measurementValue != null) {
+          final mType = r.measurementType ?? MeasurementType.generalMeasurement;
+          final mUnit =
+              (r.measurementUnit == null || r.measurementUnit!.trim().isEmpty)
+                  ? (mType.unit.isEmpty ? 'mm' : mType.unit)
+                  : r.measurementUnit!.trim();
+          await _db.into(_db.componentMeasurements).insert(
+                ComponentMeasurementsCompanion.insert(
+                  motorcycleId: r.motorcycleId,
+                  itemId: r.itemId,
+                  recordId: Value(recordId),
+                  measuredDate: AppDates.toIsoDate(day),
+                  odometerKm: Value(r.odometerKm),
+                  measurementType: mType.code,
+                  value: Value(r.measurementValue),
+                  unit: mUnit,
+                  position: Value(_clean(r.measurementPosition)),
+                  notes: Value(_clean(r.notes)),
+                  createdAt: nowIso,
+                ),
+              );
+        }
+
         return recordId;
       });
     } catch (_) {
@@ -516,41 +580,357 @@ class MaintenanceRepository {
     }
   }
 
-  /// Adds a CUSTOM rule (e.g. a fuel filter replacement interval). Never
-  /// modifies Honda manual rules; both are evaluated side by side.
+  /// Creates a new user-defined custom maintenance item and configures its
+  /// custom interval rule in a single transaction.
+  Future<int> createCustomItemAndRule({
+    required int motorcycleId,
+    required String itemName,
+    int? categoryId,
+    required ActionCode action,
+    int? intervalKm,
+    int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+    DateTime? lastCompletedDate,
+    String? notes,
+  }) async {
+    final cleanName = _clean(itemName);
+    if (cleanName == null) {
+      throw const MaintenanceException(
+          'Custom maintenance item name is required.');
+    }
+    _validateCustomIntervalInputs(
+      intervalKm: intervalKm,
+      intervalMonths: intervalMonths,
+      warningKm: warningKm,
+      warningDays: warningDays,
+      lastCompletedKm: lastCompletedKm,
+    );
+
+    return _db.transaction(() async {
+      final allItems = await _db.select(_db.maintenanceItems).get();
+      final existing = allItems
+          .where((i) => i.name.toLowerCase() == cleanName.toLowerCase())
+          .firstOrNull;
+
+      int itemId;
+      if (existing != null) {
+        if (!existing.isUserDefined && existing.name != 'Fuel Filter') {
+          throw MaintenanceException(
+            '"${existing.name}" is already a Honda maintenance item. '
+            'Set a custom interval on that item directly.',
+          );
+        }
+        // Check if an active custom rule already exists to prevent duplicates.
+        final existingCustomRules = await (_db.select(_db.maintenanceRules)
+              ..where((r) =>
+                  r.motorcycleId.equals(motorcycleId) &
+                  r.itemId.equals(existing.id) &
+                  r.source.equals(MaintenanceSource.custom.code) &
+                  r.isActive.equals(true)))
+            .get();
+        if (existingCustomRules.isNotEmpty) {
+          throw MaintenanceException(
+            'A custom maintenance item named "${existing.name}" already exists.',
+          );
+        }
+        if (!existing.isActive) {
+          await (_db.update(_db.maintenanceItems)
+                ..where((t) => t.id.equals(existing.id)))
+              .write(const MaintenanceItemsCompanion(isActive: Value(true)));
+        }
+        itemId = existing.id;
+      } else {
+        int resolvedCategoryId;
+        if (categoryId != null) {
+          resolvedCategoryId = categoryId;
+        } else {
+          final cats = await (_db.select(_db.maintenanceCategories)
+                ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+              .get();
+          resolvedCategoryId = cats.first.id;
+        }
+        final maxSort = allItems.isEmpty
+            ? 100
+            : allItems.map((i) => i.sortOrder).reduce((a, b) => a > b ? a : b) +
+                1;
+        itemId = await _db.into(_db.maintenanceItems).insert(
+              MaintenanceItemsCompanion.insert(
+                categoryId: resolvedCategoryId,
+                name: cleanName,
+                instructions: Value(_clean(notes) ??
+                    'User-defined custom maintenance item (not part of the '
+                        'Honda ADV160 Owner\'s Manual 32K0WA100 schedule).'),
+                sortOrder: Value(maxSort),
+                isUserDefined: const Value(true),
+              ),
+            );
+      }
+
+      await saveCustomRule(
+        motorcycleId: motorcycleId,
+        itemId: itemId,
+        action: action,
+        intervalKm: intervalKm,
+        intervalMonths: intervalMonths,
+        warningKm: warningKm,
+        warningDays: warningDays,
+        lastCompletedKm: lastCompletedKm,
+        lastCompletedDate: lastCompletedDate,
+        notes: notes,
+      );
+      return itemId;
+    });
+  }
+
+  /// Adds or updates a CUSTOM rule for an item. Never modifies Honda manual
+  /// rules; both are stored and evaluated side by side. If a custom rule
+  /// already exists for `(motorcycleId, itemId)`, updates it in place to
+  /// prevent duplicate custom rules.
   Future<int> addCustomRule({
+    int? ruleId,
     required int motorcycleId,
     required int itemId,
     required ActionCode action,
     int? intervalKm,
     int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+    DateTime? lastCompletedDate,
+    String? notes,
+  }) =>
+      saveCustomRule(
+        ruleId: ruleId,
+        motorcycleId: motorcycleId,
+        itemId: itemId,
+        action: action,
+        intervalKm: intervalKm,
+        intervalMonths: intervalMonths,
+        warningKm: warningKm,
+        warningDays: warningDays,
+        lastCompletedKm: lastCompletedKm,
+        lastCompletedDate: lastCompletedDate,
+        notes: notes,
+      );
+
+  Future<int> saveCustomRule({
+    int? ruleId,
+    required int motorcycleId,
+    required int itemId,
+    required ActionCode action,
+    int? intervalKm,
+    int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+    DateTime? lastCompletedDate,
     String? notes,
   }) async {
-    if (intervalKm == null && intervalMonths == null) {
-      throw const MaintenanceException(
-          'Enter a distance and/or time interval.');
-    }
-    if ((intervalKm != null && intervalKm <= 0) ||
-        (intervalMonths != null && intervalMonths <= 0)) {
-      throw const MaintenanceException('Intervals must be greater than zero.');
-    }
+    _validateCustomIntervalInputs(
+      intervalKm: intervalKm,
+      intervalMonths: intervalMonths,
+      warningKm: warningKm,
+      warningDays: warningDays,
+      lastCompletedKm: lastCompletedKm,
+    );
+
     final type = (intervalKm != null && intervalMonths != null)
         ? RuleType.combined
         : intervalKm != null
             ? RuleType.mileage
             : RuleType.date;
-    return _db
-        .into(_db.maintenanceRules)
-        .insert(MaintenanceRulesCompanion.insert(
-          motorcycleId: motorcycleId,
-          itemId: itemId,
-          ruleType: type.code,
-          actionCode: action.code,
-          source: MaintenanceSource.custom.code,
+    final lastDateIso = lastCompletedDate == null
+        ? null
+        : AppDates.toIsoDate(AppDates.dateOnly(lastCompletedDate));
+
+    return _db.transaction(() async {
+      final item = await (_db.select(_db.maintenanceItems)
+            ..where((t) => t.id.equals(itemId)))
+          .getSingleOrNull();
+      if (item == null) {
+        throw const MaintenanceException('Maintenance item not found.');
+      }
+
+      MaintenanceRuleRow? targetRule;
+      if (ruleId != null) {
+        targetRule = await (_db.select(_db.maintenanceRules)
+              ..where((r) => r.id.equals(ruleId)))
+            .getSingleOrNull();
+        if (targetRule == null) {
+          throw const MaintenanceException('Custom rule not found.');
+        }
+        if (targetRule.source != MaintenanceSource.custom.code) {
+          throw const MaintenanceException(
+              'Official Honda manual rules cannot be overwritten.');
+        }
+      } else {
+        targetRule = await (_db.select(_db.maintenanceRules)
+              ..where((r) =>
+                  r.motorcycleId.equals(motorcycleId) &
+                  r.itemId.equals(itemId) &
+                  r.source.equals(MaintenanceSource.custom.code))
+              ..orderBy([(r) => OrderingTerm.asc(r.id)])
+              ..limit(1))
+            .getSingleOrNull();
+      }
+
+      if (targetRule != null) {
+        await (_db.update(_db.maintenanceRules)
+              ..where((r) => r.id.equals(targetRule!.id)))
+            .write(MaintenanceRulesCompanion(
+          ruleType: Value(type.code),
+          actionCode: Value(action.code),
           intervalKm: Value(intervalKm),
           intervalMonths: Value(intervalMonths),
-          isVerified: const Value(false),
-          notes: Value(notes),
+          warningKm: Value(warningKm),
+          warningDays: Value(warningDays),
+          lastCompletedKm: Value(lastCompletedKm),
+          lastCompletedDate: Value(lastDateIso),
+          isActive: const Value(true),
+          notes: Value(_clean(notes)),
         ));
+        return targetRule.id;
+      }
+
+      return _db.into(_db.maintenanceRules).insert(
+            MaintenanceRulesCompanion.insert(
+              motorcycleId: motorcycleId,
+              itemId: itemId,
+              ruleType: type.code,
+              actionCode: action.code,
+              source: MaintenanceSource.custom.code,
+              intervalKm: Value(intervalKm),
+              intervalMonths: Value(intervalMonths),
+              warningKm: Value(warningKm),
+              warningDays: Value(warningDays),
+              lastCompletedKm: Value(lastCompletedKm),
+              lastCompletedDate: Value(lastDateIso),
+              isVerified: const Value(false),
+              isActive: const Value(true),
+              notes: Value(_clean(notes)),
+            ),
+          );
+    });
+  }
+
+  /// Deletes a user-defined custom rule. Never deletes official Honda rules.
+  Future<void> deleteCustomRule(int ruleId) async {
+    await _db.transaction(() async {
+      final row = await (_db.select(_db.maintenanceRules)
+            ..where((r) => r.id.equals(ruleId)))
+          .getSingleOrNull();
+      if (row == null) {
+        throw const MaintenanceException('Custom interval not found.');
+      }
+      if (row.source != MaintenanceSource.custom.code) {
+        throw const MaintenanceException(
+            'Official Honda maintenance schedule rules cannot be deleted.');
+      }
+      await (_db.delete(_db.maintenanceRuleSteps)
+            ..where((s) => s.ruleId.equals(ruleId)))
+          .go();
+      await (_db.delete(_db.maintenanceReminders)
+            ..where((rem) => rem.ruleId.equals(ruleId)))
+          .go();
+      await (_db.delete(_db.maintenanceRules)
+            ..where((r) => r.id.equals(ruleId)))
+          .go();
+    });
+  }
+
+  /// Deletes or deactivates a user-created custom maintenance item and its
+  /// custom rules. Preserves any historical maintenance records.
+  Future<void> deleteCustomItem(int itemId) async {
+    await _db.transaction(() async {
+      final item = await (_db.select(_db.maintenanceItems)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingleOrNull();
+      if (item == null) {
+        throw const MaintenanceException('Maintenance item not found.');
+      }
+      if (!item.isUserDefined && item.name != 'Fuel Filter') {
+        throw const MaintenanceException(
+            'Official Honda maintenance items cannot be deleted.');
+      }
+
+      final customRules = await (_db.select(_db.maintenanceRules)
+            ..where((r) =>
+                r.itemId.equals(itemId) &
+                r.source.equals(MaintenanceSource.custom.code)))
+          .get();
+      for (final r in customRules) {
+        await (_db.delete(_db.maintenanceRuleSteps)
+              ..where((s) => s.ruleId.equals(r.id)))
+            .go();
+        await (_db.delete(_db.maintenanceReminders)
+              ..where((rem) => rem.ruleId.equals(r.id)))
+            .go();
+        await (_db.delete(_db.maintenanceRules)
+              ..where((t) => t.id.equals(r.id)))
+            .go();
+      }
+
+      if (item.name == 'Fuel Filter') {
+        return;
+      }
+
+      final hasRecords = (await (_db.select(_db.maintenanceRecords)
+                ..where((r) => r.itemId.equals(itemId))
+                ..limit(1))
+              .getSingleOrNull()) !=
+          null;
+      final hasMeas = (await (_db.select(_db.componentMeasurements)
+                ..where((m) => m.itemId.equals(itemId))
+                ..limit(1))
+              .getSingleOrNull()) !=
+          null;
+
+      if (hasRecords || hasMeas) {
+        await (_db.update(_db.maintenanceItems)
+              ..where((i) => i.id.equals(itemId)))
+            .write(const MaintenanceItemsCompanion(isActive: Value(false)));
+      } else {
+        await (_db.delete(_db.componentSpecs)
+              ..where((s) => s.itemId.equals(itemId)))
+            .go();
+        await (_db.delete(_db.maintenanceItems)
+              ..where((i) => i.id.equals(itemId)))
+            .go();
+      }
+    });
+  }
+
+  static void _validateCustomIntervalInputs({
+    int? intervalKm,
+    int? intervalMonths,
+    int? warningKm,
+    int? warningDays,
+    int? lastCompletedKm,
+  }) {
+    if (intervalKm == null && intervalMonths == null) {
+      throw const MaintenanceException(
+          'Enter a distance (km) and/or time (months) interval.');
+    }
+    if ((intervalKm != null && intervalKm <= 0) ||
+        (intervalMonths != null && intervalMonths <= 0)) {
+      throw const MaintenanceException('Intervals must be greater than zero.');
+    }
+    if (warningKm != null && warningKm < 0) {
+      throw const MaintenanceException('Warning threshold cannot be negative.');
+    }
+    if (warningKm != null && intervalKm != null && warningKm >= intervalKm) {
+      throw const MaintenanceException(
+          'Warning threshold (km) must be less than the interval (km).');
+    }
+    if (warningDays != null && warningDays < 0) {
+      throw const MaintenanceException(
+          'Warning threshold (days) cannot be negative.');
+    }
+    if (lastCompletedKm != null && lastCompletedKm < 0) {
+      throw const MaintenanceException(
+          'Last completed odometer cannot be negative.');
+    }
   }
 }

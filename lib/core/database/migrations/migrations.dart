@@ -79,6 +79,44 @@ Future<void> runMigrations(
     await InitialSeed(db).run();
     await HondaScheduleSeed(db).run();
   }
+
+  // v5: adds is_user_defined to maintenance_items, custom rule warning/baseline
+  // columns (warning_km, warning_days, last_completed_km, last_completed_date)
+  // to maintenance_rules, and the component_specs table for user-defined
+  // component measurement limits. Preserves all existing records and rules.
+  if (from < 5 && to >= 5) {
+    final itemCols = await _columnNames(db, 'maintenance_items');
+    if (!itemCols.contains('is_user_defined')) {
+      await m.addColumn(db.maintenanceItems, db.maintenanceItems.isUserDefined);
+    }
+    await db.customStatement(
+      "UPDATE maintenance_items SET is_user_defined = 1 WHERE name = 'Fuel Filter'",
+    );
+
+    final ruleCols = await _columnNames(db, 'maintenance_rules');
+    if (!ruleCols.contains('warning_km')) {
+      await m.addColumn(db.maintenanceRules, db.maintenanceRules.warningKm);
+    }
+    if (!ruleCols.contains('warning_days')) {
+      await m.addColumn(db.maintenanceRules, db.maintenanceRules.warningDays);
+    }
+    if (!ruleCols.contains('last_completed_km')) {
+      await m.addColumn(
+          db.maintenanceRules, db.maintenanceRules.lastCompletedKm);
+    }
+    if (!ruleCols.contains('last_completed_date')) {
+      await m.addColumn(
+          db.maintenanceRules, db.maintenanceRules.lastCompletedDate);
+    }
+
+    final tables = await db
+        .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='component_specs'")
+        .get();
+    if (tables.isEmpty) {
+      await m.createTable(db.componentSpecs);
+    }
+  }
 }
 
 Future<Set<String>> _columnNames(AppDatabase db, String table) async {

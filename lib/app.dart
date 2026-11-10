@@ -9,6 +9,7 @@ import 'features/components/presentation/components_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/maintenance/presentation/maintenance_form_screen.dart';
 import 'features/maintenance/presentation/maintenance_history_screen.dart';
+import 'features/maintenance/presentation/maintenance_item_detail_screen.dart';
 import 'features/maintenance/presentation/maintenance_screen.dart';
 import 'features/motorcycle/presentation/motorcycle_edit_screen.dart';
 import 'features/motorcycle/presentation/motorcycle_profile_screen.dart';
@@ -41,6 +42,13 @@ final GoRouter appRouter = GoRouter(
               GoRoute(
                 path: 'history',
                 builder: (_, __) => const MaintenanceHistoryScreen(),
+              ),
+              GoRoute(
+                path: 'item/:itemId',
+                builder: (_, state) => MaintenanceItemDetailScreen(
+                  itemId:
+                      int.tryParse(state.pathParameters['itemId'] ?? '') ?? 0,
+                ),
               ),
               GoRoute(
                 path: 'record',

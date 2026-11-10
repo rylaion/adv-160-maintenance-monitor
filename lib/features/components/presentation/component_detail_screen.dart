@@ -11,6 +11,7 @@ import '../../../shared/widgets/photo_attachments_field.dart';
 import '../../maintenance/data/maintenance_repository.dart';
 import '../../maintenance/domain/maintenance_overview.dart';
 import '../../maintenance/presentation/maintenance_history_screen.dart';
+import '../../maintenance/presentation/maintenance_item_detail_screen.dart';
 import '../../maintenance/presentation/maintenance_view_model.dart';
 import '../../maintenance/presentation/status_text.dart';
 import '../../motorcycle/presentation/motorcycle_view_model.dart';
@@ -721,16 +722,31 @@ class _ComponentDetailScreenState extends ConsumerState<ComponentDetailScreen> {
 
 /// Separate panel for verified specification limits so measurements and safety
 /// limits are never conflated or invented.
-class _SpecificationBanner extends StatelessWidget {
+class _SpecificationBanner extends ConsumerWidget {
   const _SpecificationBanner({required this.status});
   final ItemStatus status;
 
   @override
-  Widget build(BuildContext context) {
-    final verifiedRules = status.evaluation.ruleEvaluations
-        .where((r) => r.rule.isVerified && r.rule.isManufacturer)
-        .toList();
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final measurements =
+        ref.watch(componentMeasurementsProvider(status.item.id)).valueOrNull ??
+            const [];
+    final userSpecs =
+        ref.watch(userComponentSpecsProvider).valueOrNull ?? const {};
+    final defs = ComponentSpecDefinition.specsForItem(
+      itemId: status.item.id,
+      itemName: status.item.name,
+    );
+    final specs = [
+      for (final d in defs)
+        EvaluatedComponentSpec.evaluate(
+          definition: d,
+          userSpec: userSpecs[d.specKey],
+          itemMeasurements: measurements,
+        ),
+    ];
+
     return Card(
       color: scheme.surfaceContainerHighest,
       child: Padding(
@@ -745,22 +761,58 @@ class _SpecificationBanner extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Verified Specification Limits & Safety Notice',
+                    'Component Measurement & Wear Specifications',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
+            for (final s in specs) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      s.definition.componentName,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  Text(
+                    s.status.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Standard: ${s.standardDisplay}\n'
+                'Service limit: ${s.serviceLimitDisplay}\n'
+                'Current measurement: ${s.currentActualValue == null ? 'Not recorded' : '${s.currentActualValue!.toStringAsFixed(2)} ${s.unit}'}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => showCustomSpecLimitDialog(
+                    context: context,
+                    ref: ref,
+                    item: status.item,
+                    spec: s,
+                  ),
+                  icon: const Icon(Icons.edit_note, size: 16),
+                  label: Text(s.isUserDefinedLimit
+                      ? 'Edit Custom Limit'
+                      : 'Set Custom Limit'),
+                ),
+              ),
+              const Divider(height: 12),
+            ],
             Text(
-              verifiedRules.isEmpty
-                  ? 'No verified Honda wear/measurement limit is configured for '
-                      '${status.item.name}. ADV-MON does not automatically '
-                      'declare a component safe from mileage or measurements '
-                      'alone—compare inspection results against the official '
-                      '2023 Honda ADV160 Owner\'s Manual (32K0WA100).'
-                  : 'Verified manual rule active. Always pair numerical readings '
-                      'with physical inspection.',
+              'Compare inspection results against the official 2023 Honda '
+              'ADV160 Owner\'s Manual (32K0WA100). Specifications not present '
+              'in the verified manual are marked "${ComponentSpecDefinition.notAvailableText}".',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

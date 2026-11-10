@@ -47,4 +47,6 @@ class MaintenanceItems extends Table {
   TextColumn get instructions => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  BoolColumn get isUserDefined =>
+      boolean().withDefault(const Constant(false))();
 }

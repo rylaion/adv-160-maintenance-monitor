@@ -853,9 +853,19 @@ class $MaintenanceItemsTable extends MaintenanceItems
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
       defaultValue: const Constant(true));
+  static const VerificationMeta _isUserDefinedMeta =
+      const VerificationMeta('isUserDefined');
+  @override
+  late final GeneratedColumn<bool> isUserDefined = GeneratedColumn<bool>(
+      'is_user_defined', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_user_defined" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, categoryId, name, instructions, sortOrder, isActive];
+      [id, categoryId, name, instructions, sortOrder, isActive, isUserDefined];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -897,6 +907,12 @@ class $MaintenanceItemsTable extends MaintenanceItems
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
+    if (data.containsKey('is_user_defined')) {
+      context.handle(
+          _isUserDefinedMeta,
+          isUserDefined.isAcceptableOrUnknown(
+              data['is_user_defined']!, _isUserDefinedMeta));
+    }
     return context;
   }
 
@@ -918,6 +934,8 @@ class $MaintenanceItemsTable extends MaintenanceItems
           .read(DriftSqlType.int, data['${effectivePrefix}sort_order'])!,
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      isUserDefined: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_user_defined'])!,
     );
   }
 
@@ -935,13 +953,15 @@ class MaintenanceItemRow extends DataClass
   final String? instructions;
   final int sortOrder;
   final bool isActive;
+  final bool isUserDefined;
   const MaintenanceItemRow(
       {required this.id,
       required this.categoryId,
       required this.name,
       this.instructions,
       required this.sortOrder,
-      required this.isActive});
+      required this.isActive,
+      required this.isUserDefined});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -953,6 +973,7 @@ class MaintenanceItemRow extends DataClass
     }
     map['sort_order'] = Variable<int>(sortOrder);
     map['is_active'] = Variable<bool>(isActive);
+    map['is_user_defined'] = Variable<bool>(isUserDefined);
     return map;
   }
 
@@ -966,6 +987,7 @@ class MaintenanceItemRow extends DataClass
           : Value(instructions),
       sortOrder: Value(sortOrder),
       isActive: Value(isActive),
+      isUserDefined: Value(isUserDefined),
     );
   }
 
@@ -979,6 +1001,7 @@ class MaintenanceItemRow extends DataClass
       instructions: serializer.fromJson<String?>(json['instructions']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      isUserDefined: serializer.fromJson<bool>(json['isUserDefined']),
     );
   }
   @override
@@ -991,6 +1014,7 @@ class MaintenanceItemRow extends DataClass
       'instructions': serializer.toJson<String?>(instructions),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isActive': serializer.toJson<bool>(isActive),
+      'isUserDefined': serializer.toJson<bool>(isUserDefined),
     };
   }
 
@@ -1000,7 +1024,8 @@ class MaintenanceItemRow extends DataClass
           String? name,
           Value<String?> instructions = const Value.absent(),
           int? sortOrder,
-          bool? isActive}) =>
+          bool? isActive,
+          bool? isUserDefined}) =>
       MaintenanceItemRow(
         id: id ?? this.id,
         categoryId: categoryId ?? this.categoryId,
@@ -1009,6 +1034,7 @@ class MaintenanceItemRow extends DataClass
             instructions.present ? instructions.value : this.instructions,
         sortOrder: sortOrder ?? this.sortOrder,
         isActive: isActive ?? this.isActive,
+        isUserDefined: isUserDefined ?? this.isUserDefined,
       );
   MaintenanceItemRow copyWithCompanion(MaintenanceItemsCompanion data) {
     return MaintenanceItemRow(
@@ -1021,6 +1047,9 @@ class MaintenanceItemRow extends DataClass
           : this.instructions,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      isUserDefined: data.isUserDefined.present
+          ? data.isUserDefined.value
+          : this.isUserDefined,
     );
   }
 
@@ -1032,14 +1061,15 @@ class MaintenanceItemRow extends DataClass
           ..write('name: $name, ')
           ..write('instructions: $instructions, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('isUserDefined: $isUserDefined')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, categoryId, name, instructions, sortOrder, isActive);
+  int get hashCode => Object.hash(
+      id, categoryId, name, instructions, sortOrder, isActive, isUserDefined);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1049,7 +1079,8 @@ class MaintenanceItemRow extends DataClass
           other.name == this.name &&
           other.instructions == this.instructions &&
           other.sortOrder == this.sortOrder &&
-          other.isActive == this.isActive);
+          other.isActive == this.isActive &&
+          other.isUserDefined == this.isUserDefined);
 }
 
 class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
@@ -1059,6 +1090,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
   final Value<String?> instructions;
   final Value<int> sortOrder;
   final Value<bool> isActive;
+  final Value<bool> isUserDefined;
   const MaintenanceItemsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -1066,6 +1098,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
     this.instructions = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.isUserDefined = const Value.absent(),
   });
   MaintenanceItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -1074,6 +1107,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
     this.instructions = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.isUserDefined = const Value.absent(),
   })  : categoryId = Value(categoryId),
         name = Value(name);
   static Insertable<MaintenanceItemRow> custom({
@@ -1083,6 +1117,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
     Expression<String>? instructions,
     Expression<int>? sortOrder,
     Expression<bool>? isActive,
+    Expression<bool>? isUserDefined,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1091,6 +1126,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
       if (instructions != null) 'instructions': instructions,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isActive != null) 'is_active': isActive,
+      if (isUserDefined != null) 'is_user_defined': isUserDefined,
     });
   }
 
@@ -1100,7 +1136,8 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
       Value<String>? name,
       Value<String?>? instructions,
       Value<int>? sortOrder,
-      Value<bool>? isActive}) {
+      Value<bool>? isActive,
+      Value<bool>? isUserDefined}) {
     return MaintenanceItemsCompanion(
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
@@ -1108,6 +1145,7 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
       instructions: instructions ?? this.instructions,
       sortOrder: sortOrder ?? this.sortOrder,
       isActive: isActive ?? this.isActive,
+      isUserDefined: isUserDefined ?? this.isUserDefined,
     );
   }
 
@@ -1132,6 +1170,9 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (isUserDefined.present) {
+      map['is_user_defined'] = Variable<bool>(isUserDefined.value);
+    }
     return map;
   }
 
@@ -1143,7 +1184,8 @@ class MaintenanceItemsCompanion extends UpdateCompanion<MaintenanceItemRow> {
           ..write('name: $name, ')
           ..write('instructions: $instructions, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('isUserDefined: $isUserDefined')
           ..write(')'))
         .toString();
   }
@@ -1222,6 +1264,30 @@ class $MaintenanceRulesTable extends MaintenanceRules
   late final GeneratedColumn<int> intervalMonths = GeneratedColumn<int>(
       'interval_months', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _warningKmMeta =
+      const VerificationMeta('warningKm');
+  @override
+  late final GeneratedColumn<int> warningKm = GeneratedColumn<int>(
+      'warning_km', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _warningDaysMeta =
+      const VerificationMeta('warningDays');
+  @override
+  late final GeneratedColumn<int> warningDays = GeneratedColumn<int>(
+      'warning_days', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _lastCompletedKmMeta =
+      const VerificationMeta('lastCompletedKm');
+  @override
+  late final GeneratedColumn<int> lastCompletedKm = GeneratedColumn<int>(
+      'last_completed_km', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _lastCompletedDateMeta =
+      const VerificationMeta('lastCompletedDate');
+  @override
+  late final GeneratedColumn<String> lastCompletedDate =
+      GeneratedColumn<String>('last_completed_date', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _isVerifiedMeta =
       const VerificationMeta('isVerified');
   @override
@@ -1259,6 +1325,10 @@ class $MaintenanceRulesTable extends MaintenanceRules
         sourcePage,
         intervalKm,
         intervalMonths,
+        warningKm,
+        warningDays,
+        lastCompletedKm,
+        lastCompletedDate,
         isVerified,
         isActive,
         notes
@@ -1334,6 +1404,28 @@ class $MaintenanceRulesTable extends MaintenanceRules
           intervalMonths.isAcceptableOrUnknown(
               data['interval_months']!, _intervalMonthsMeta));
     }
+    if (data.containsKey('warning_km')) {
+      context.handle(_warningKmMeta,
+          warningKm.isAcceptableOrUnknown(data['warning_km']!, _warningKmMeta));
+    }
+    if (data.containsKey('warning_days')) {
+      context.handle(
+          _warningDaysMeta,
+          warningDays.isAcceptableOrUnknown(
+              data['warning_days']!, _warningDaysMeta));
+    }
+    if (data.containsKey('last_completed_km')) {
+      context.handle(
+          _lastCompletedKmMeta,
+          lastCompletedKm.isAcceptableOrUnknown(
+              data['last_completed_km']!, _lastCompletedKmMeta));
+    }
+    if (data.containsKey('last_completed_date')) {
+      context.handle(
+          _lastCompletedDateMeta,
+          lastCompletedDate.isAcceptableOrUnknown(
+              data['last_completed_date']!, _lastCompletedDateMeta));
+    }
     if (data.containsKey('is_verified')) {
       context.handle(
           _isVerifiedMeta,
@@ -1377,6 +1469,14 @@ class $MaintenanceRulesTable extends MaintenanceRules
           .read(DriftSqlType.int, data['${effectivePrefix}interval_km']),
       intervalMonths: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}interval_months']),
+      warningKm: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}warning_km']),
+      warningDays: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}warning_days']),
+      lastCompletedKm: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}last_completed_km']),
+      lastCompletedDate: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}last_completed_date']),
       isVerified: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_verified'])!,
       isActive: attachedDatabase.typeMapping
@@ -1413,6 +1513,12 @@ class MaintenanceRuleRow extends DataClass
   final int? intervalKm;
   final int? intervalMonths;
 
+  /// Optional per-rule warning thresholds and baseline completion for custom rules.
+  final int? warningKm;
+  final int? warningDays;
+  final int? lastCompletedKm;
+  final String? lastCompletedDate;
+
   /// False until the entry is confirmed against the official manual.
   final bool isVerified;
   final bool isActive;
@@ -1428,6 +1534,10 @@ class MaintenanceRuleRow extends DataClass
       this.sourcePage,
       this.intervalKm,
       this.intervalMonths,
+      this.warningKm,
+      this.warningDays,
+      this.lastCompletedKm,
+      this.lastCompletedDate,
       required this.isVerified,
       required this.isActive,
       this.notes});
@@ -1451,6 +1561,18 @@ class MaintenanceRuleRow extends DataClass
     }
     if (!nullToAbsent || intervalMonths != null) {
       map['interval_months'] = Variable<int>(intervalMonths);
+    }
+    if (!nullToAbsent || warningKm != null) {
+      map['warning_km'] = Variable<int>(warningKm);
+    }
+    if (!nullToAbsent || warningDays != null) {
+      map['warning_days'] = Variable<int>(warningDays);
+    }
+    if (!nullToAbsent || lastCompletedKm != null) {
+      map['last_completed_km'] = Variable<int>(lastCompletedKm);
+    }
+    if (!nullToAbsent || lastCompletedDate != null) {
+      map['last_completed_date'] = Variable<String>(lastCompletedDate);
     }
     map['is_verified'] = Variable<bool>(isVerified);
     map['is_active'] = Variable<bool>(isActive);
@@ -1480,6 +1602,18 @@ class MaintenanceRuleRow extends DataClass
       intervalMonths: intervalMonths == null && nullToAbsent
           ? const Value.absent()
           : Value(intervalMonths),
+      warningKm: warningKm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warningKm),
+      warningDays: warningDays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warningDays),
+      lastCompletedKm: lastCompletedKm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCompletedKm),
+      lastCompletedDate: lastCompletedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCompletedDate),
       isVerified: Value(isVerified),
       isActive: Value(isActive),
       notes:
@@ -1501,6 +1635,11 @@ class MaintenanceRuleRow extends DataClass
       sourcePage: serializer.fromJson<int?>(json['sourcePage']),
       intervalKm: serializer.fromJson<int?>(json['intervalKm']),
       intervalMonths: serializer.fromJson<int?>(json['intervalMonths']),
+      warningKm: serializer.fromJson<int?>(json['warningKm']),
+      warningDays: serializer.fromJson<int?>(json['warningDays']),
+      lastCompletedKm: serializer.fromJson<int?>(json['lastCompletedKm']),
+      lastCompletedDate:
+          serializer.fromJson<String?>(json['lastCompletedDate']),
       isVerified: serializer.fromJson<bool>(json['isVerified']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -1520,6 +1659,10 @@ class MaintenanceRuleRow extends DataClass
       'sourcePage': serializer.toJson<int?>(sourcePage),
       'intervalKm': serializer.toJson<int?>(intervalKm),
       'intervalMonths': serializer.toJson<int?>(intervalMonths),
+      'warningKm': serializer.toJson<int?>(warningKm),
+      'warningDays': serializer.toJson<int?>(warningDays),
+      'lastCompletedKm': serializer.toJson<int?>(lastCompletedKm),
+      'lastCompletedDate': serializer.toJson<String?>(lastCompletedDate),
       'isVerified': serializer.toJson<bool>(isVerified),
       'isActive': serializer.toJson<bool>(isActive),
       'notes': serializer.toJson<String?>(notes),
@@ -1537,6 +1680,10 @@ class MaintenanceRuleRow extends DataClass
           Value<int?> sourcePage = const Value.absent(),
           Value<int?> intervalKm = const Value.absent(),
           Value<int?> intervalMonths = const Value.absent(),
+          Value<int?> warningKm = const Value.absent(),
+          Value<int?> warningDays = const Value.absent(),
+          Value<int?> lastCompletedKm = const Value.absent(),
+          Value<String?> lastCompletedDate = const Value.absent(),
           bool? isVerified,
           bool? isActive,
           Value<String?> notes = const Value.absent()}) =>
@@ -1553,6 +1700,14 @@ class MaintenanceRuleRow extends DataClass
         intervalKm: intervalKm.present ? intervalKm.value : this.intervalKm,
         intervalMonths:
             intervalMonths.present ? intervalMonths.value : this.intervalMonths,
+        warningKm: warningKm.present ? warningKm.value : this.warningKm,
+        warningDays: warningDays.present ? warningDays.value : this.warningDays,
+        lastCompletedKm: lastCompletedKm.present
+            ? lastCompletedKm.value
+            : this.lastCompletedKm,
+        lastCompletedDate: lastCompletedDate.present
+            ? lastCompletedDate.value
+            : this.lastCompletedDate,
         isVerified: isVerified ?? this.isVerified,
         isActive: isActive ?? this.isActive,
         notes: notes.present ? notes.value : this.notes,
@@ -1578,6 +1733,15 @@ class MaintenanceRuleRow extends DataClass
       intervalMonths: data.intervalMonths.present
           ? data.intervalMonths.value
           : this.intervalMonths,
+      warningKm: data.warningKm.present ? data.warningKm.value : this.warningKm,
+      warningDays:
+          data.warningDays.present ? data.warningDays.value : this.warningDays,
+      lastCompletedKm: data.lastCompletedKm.present
+          ? data.lastCompletedKm.value
+          : this.lastCompletedKm,
+      lastCompletedDate: data.lastCompletedDate.present
+          ? data.lastCompletedDate.value
+          : this.lastCompletedDate,
       isVerified:
           data.isVerified.present ? data.isVerified.value : this.isVerified,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
@@ -1598,6 +1762,10 @@ class MaintenanceRuleRow extends DataClass
           ..write('sourcePage: $sourcePage, ')
           ..write('intervalKm: $intervalKm, ')
           ..write('intervalMonths: $intervalMonths, ')
+          ..write('warningKm: $warningKm, ')
+          ..write('warningDays: $warningDays, ')
+          ..write('lastCompletedKm: $lastCompletedKm, ')
+          ..write('lastCompletedDate: $lastCompletedDate, ')
           ..write('isVerified: $isVerified, ')
           ..write('isActive: $isActive, ')
           ..write('notes: $notes')
@@ -1617,6 +1785,10 @@ class MaintenanceRuleRow extends DataClass
       sourcePage,
       intervalKm,
       intervalMonths,
+      warningKm,
+      warningDays,
+      lastCompletedKm,
+      lastCompletedDate,
       isVerified,
       isActive,
       notes);
@@ -1634,6 +1806,10 @@ class MaintenanceRuleRow extends DataClass
           other.sourcePage == this.sourcePage &&
           other.intervalKm == this.intervalKm &&
           other.intervalMonths == this.intervalMonths &&
+          other.warningKm == this.warningKm &&
+          other.warningDays == this.warningDays &&
+          other.lastCompletedKm == this.lastCompletedKm &&
+          other.lastCompletedDate == this.lastCompletedDate &&
           other.isVerified == this.isVerified &&
           other.isActive == this.isActive &&
           other.notes == this.notes);
@@ -1650,6 +1826,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
   final Value<int?> sourcePage;
   final Value<int?> intervalKm;
   final Value<int?> intervalMonths;
+  final Value<int?> warningKm;
+  final Value<int?> warningDays;
+  final Value<int?> lastCompletedKm;
+  final Value<String?> lastCompletedDate;
   final Value<bool> isVerified;
   final Value<bool> isActive;
   final Value<String?> notes;
@@ -1664,6 +1844,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
     this.sourcePage = const Value.absent(),
     this.intervalKm = const Value.absent(),
     this.intervalMonths = const Value.absent(),
+    this.warningKm = const Value.absent(),
+    this.warningDays = const Value.absent(),
+    this.lastCompletedKm = const Value.absent(),
+    this.lastCompletedDate = const Value.absent(),
     this.isVerified = const Value.absent(),
     this.isActive = const Value.absent(),
     this.notes = const Value.absent(),
@@ -1679,6 +1863,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
     this.sourcePage = const Value.absent(),
     this.intervalKm = const Value.absent(),
     this.intervalMonths = const Value.absent(),
+    this.warningKm = const Value.absent(),
+    this.warningDays = const Value.absent(),
+    this.lastCompletedKm = const Value.absent(),
+    this.lastCompletedDate = const Value.absent(),
     this.isVerified = const Value.absent(),
     this.isActive = const Value.absent(),
     this.notes = const Value.absent(),
@@ -1698,6 +1886,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
     Expression<int>? sourcePage,
     Expression<int>? intervalKm,
     Expression<int>? intervalMonths,
+    Expression<int>? warningKm,
+    Expression<int>? warningDays,
+    Expression<int>? lastCompletedKm,
+    Expression<String>? lastCompletedDate,
     Expression<bool>? isVerified,
     Expression<bool>? isActive,
     Expression<String>? notes,
@@ -1713,6 +1905,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
       if (sourcePage != null) 'source_page': sourcePage,
       if (intervalKm != null) 'interval_km': intervalKm,
       if (intervalMonths != null) 'interval_months': intervalMonths,
+      if (warningKm != null) 'warning_km': warningKm,
+      if (warningDays != null) 'warning_days': warningDays,
+      if (lastCompletedKm != null) 'last_completed_km': lastCompletedKm,
+      if (lastCompletedDate != null) 'last_completed_date': lastCompletedDate,
       if (isVerified != null) 'is_verified': isVerified,
       if (isActive != null) 'is_active': isActive,
       if (notes != null) 'notes': notes,
@@ -1730,6 +1926,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
       Value<int?>? sourcePage,
       Value<int?>? intervalKm,
       Value<int?>? intervalMonths,
+      Value<int?>? warningKm,
+      Value<int?>? warningDays,
+      Value<int?>? lastCompletedKm,
+      Value<String?>? lastCompletedDate,
       Value<bool>? isVerified,
       Value<bool>? isActive,
       Value<String?>? notes}) {
@@ -1744,6 +1944,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
       sourcePage: sourcePage ?? this.sourcePage,
       intervalKm: intervalKm ?? this.intervalKm,
       intervalMonths: intervalMonths ?? this.intervalMonths,
+      warningKm: warningKm ?? this.warningKm,
+      warningDays: warningDays ?? this.warningDays,
+      lastCompletedKm: lastCompletedKm ?? this.lastCompletedKm,
+      lastCompletedDate: lastCompletedDate ?? this.lastCompletedDate,
       isVerified: isVerified ?? this.isVerified,
       isActive: isActive ?? this.isActive,
       notes: notes ?? this.notes,
@@ -1783,6 +1987,18 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
     if (intervalMonths.present) {
       map['interval_months'] = Variable<int>(intervalMonths.value);
     }
+    if (warningKm.present) {
+      map['warning_km'] = Variable<int>(warningKm.value);
+    }
+    if (warningDays.present) {
+      map['warning_days'] = Variable<int>(warningDays.value);
+    }
+    if (lastCompletedKm.present) {
+      map['last_completed_km'] = Variable<int>(lastCompletedKm.value);
+    }
+    if (lastCompletedDate.present) {
+      map['last_completed_date'] = Variable<String>(lastCompletedDate.value);
+    }
     if (isVerified.present) {
       map['is_verified'] = Variable<bool>(isVerified.value);
     }
@@ -1808,6 +2024,10 @@ class MaintenanceRulesCompanion extends UpdateCompanion<MaintenanceRuleRow> {
           ..write('sourcePage: $sourcePage, ')
           ..write('intervalKm: $intervalKm, ')
           ..write('intervalMonths: $intervalMonths, ')
+          ..write('warningKm: $warningKm, ')
+          ..write('warningDays: $warningDays, ')
+          ..write('lastCompletedKm: $lastCompletedKm, ')
+          ..write('lastCompletedDate: $lastCompletedDate, ')
           ..write('isVerified: $isVerified, ')
           ..write('isActive: $isActive, ')
           ..write('notes: $notes')
@@ -4317,6 +4537,411 @@ class ComponentMeasurementsCompanion
           ..write('notes: $notes, ')
           ..write('voidedAt: $voidedAt, ')
           ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ComponentSpecsTable extends ComponentSpecs
+    with TableInfo<$ComponentSpecsTable, ComponentSpecRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ComponentSpecsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _specKeyMeta =
+      const VerificationMeta('specKey');
+  @override
+  late final GeneratedColumn<String> specKey = GeneratedColumn<String>(
+      'spec_key', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 80),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<int> itemId = GeneratedColumn<int>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES maintenance_items (id)'));
+  static const VerificationMeta _customStandardValueMeta =
+      const VerificationMeta('customStandardValue');
+  @override
+  late final GeneratedColumn<double> customStandardValue =
+      GeneratedColumn<double>('custom_standard_value', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _customServiceLimitMeta =
+      const VerificationMeta('customServiceLimit');
+  @override
+  late final GeneratedColumn<double> customServiceLimit =
+      GeneratedColumn<double>('custom_service_limit', aliasedName, true,
+          type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+      'unit', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('mm'));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        specKey,
+        itemId,
+        customStandardValue,
+        customServiceLimit,
+        unit,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'component_specs';
+  @override
+  VerificationContext validateIntegrity(Insertable<ComponentSpecRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('spec_key')) {
+      context.handle(_specKeyMeta,
+          specKey.isAcceptableOrUnknown(data['spec_key']!, _specKeyMeta));
+    } else if (isInserting) {
+      context.missing(_specKeyMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('custom_standard_value')) {
+      context.handle(
+          _customStandardValueMeta,
+          customStandardValue.isAcceptableOrUnknown(
+              data['custom_standard_value']!, _customStandardValueMeta));
+    }
+    if (data.containsKey('custom_service_limit')) {
+      context.handle(
+          _customServiceLimitMeta,
+          customServiceLimit.isAcceptableOrUnknown(
+              data['custom_service_limit']!, _customServiceLimitMeta));
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+          _unitMeta, unit.isAcceptableOrUnknown(data['unit']!, _unitMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ComponentSpecRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ComponentSpecRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      specKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}spec_key'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}item_id'])!,
+      customStandardValue: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}custom_standard_value']),
+      customServiceLimit: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}custom_service_limit']),
+      unit: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}unit'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $ComponentSpecsTable createAlias(String alias) {
+    return $ComponentSpecsTable(attachedDatabase, alias);
+  }
+}
+
+class ComponentSpecRow extends DataClass
+    implements Insertable<ComponentSpecRow> {
+  final int id;
+  final String specKey;
+  final int itemId;
+  final double? customStandardValue;
+  final double? customServiceLimit;
+  final String unit;
+  final String updatedAt;
+  const ComponentSpecRow(
+      {required this.id,
+      required this.specKey,
+      required this.itemId,
+      this.customStandardValue,
+      this.customServiceLimit,
+      required this.unit,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['spec_key'] = Variable<String>(specKey);
+    map['item_id'] = Variable<int>(itemId);
+    if (!nullToAbsent || customStandardValue != null) {
+      map['custom_standard_value'] = Variable<double>(customStandardValue);
+    }
+    if (!nullToAbsent || customServiceLimit != null) {
+      map['custom_service_limit'] = Variable<double>(customServiceLimit);
+    }
+    map['unit'] = Variable<String>(unit);
+    map['updated_at'] = Variable<String>(updatedAt);
+    return map;
+  }
+
+  ComponentSpecsCompanion toCompanion(bool nullToAbsent) {
+    return ComponentSpecsCompanion(
+      id: Value(id),
+      specKey: Value(specKey),
+      itemId: Value(itemId),
+      customStandardValue: customStandardValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customStandardValue),
+      customServiceLimit: customServiceLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customServiceLimit),
+      unit: Value(unit),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ComponentSpecRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ComponentSpecRow(
+      id: serializer.fromJson<int>(json['id']),
+      specKey: serializer.fromJson<String>(json['specKey']),
+      itemId: serializer.fromJson<int>(json['itemId']),
+      customStandardValue:
+          serializer.fromJson<double?>(json['customStandardValue']),
+      customServiceLimit:
+          serializer.fromJson<double?>(json['customServiceLimit']),
+      unit: serializer.fromJson<String>(json['unit']),
+      updatedAt: serializer.fromJson<String>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'specKey': serializer.toJson<String>(specKey),
+      'itemId': serializer.toJson<int>(itemId),
+      'customStandardValue': serializer.toJson<double?>(customStandardValue),
+      'customServiceLimit': serializer.toJson<double?>(customServiceLimit),
+      'unit': serializer.toJson<String>(unit),
+      'updatedAt': serializer.toJson<String>(updatedAt),
+    };
+  }
+
+  ComponentSpecRow copyWith(
+          {int? id,
+          String? specKey,
+          int? itemId,
+          Value<double?> customStandardValue = const Value.absent(),
+          Value<double?> customServiceLimit = const Value.absent(),
+          String? unit,
+          String? updatedAt}) =>
+      ComponentSpecRow(
+        id: id ?? this.id,
+        specKey: specKey ?? this.specKey,
+        itemId: itemId ?? this.itemId,
+        customStandardValue: customStandardValue.present
+            ? customStandardValue.value
+            : this.customStandardValue,
+        customServiceLimit: customServiceLimit.present
+            ? customServiceLimit.value
+            : this.customServiceLimit,
+        unit: unit ?? this.unit,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  ComponentSpecRow copyWithCompanion(ComponentSpecsCompanion data) {
+    return ComponentSpecRow(
+      id: data.id.present ? data.id.value : this.id,
+      specKey: data.specKey.present ? data.specKey.value : this.specKey,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      customStandardValue: data.customStandardValue.present
+          ? data.customStandardValue.value
+          : this.customStandardValue,
+      customServiceLimit: data.customServiceLimit.present
+          ? data.customServiceLimit.value
+          : this.customServiceLimit,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentSpecRow(')
+          ..write('id: $id, ')
+          ..write('specKey: $specKey, ')
+          ..write('itemId: $itemId, ')
+          ..write('customStandardValue: $customStandardValue, ')
+          ..write('customServiceLimit: $customServiceLimit, ')
+          ..write('unit: $unit, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, specKey, itemId, customStandardValue,
+      customServiceLimit, unit, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ComponentSpecRow &&
+          other.id == this.id &&
+          other.specKey == this.specKey &&
+          other.itemId == this.itemId &&
+          other.customStandardValue == this.customStandardValue &&
+          other.customServiceLimit == this.customServiceLimit &&
+          other.unit == this.unit &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ComponentSpecsCompanion extends UpdateCompanion<ComponentSpecRow> {
+  final Value<int> id;
+  final Value<String> specKey;
+  final Value<int> itemId;
+  final Value<double?> customStandardValue;
+  final Value<double?> customServiceLimit;
+  final Value<String> unit;
+  final Value<String> updatedAt;
+  const ComponentSpecsCompanion({
+    this.id = const Value.absent(),
+    this.specKey = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.customStandardValue = const Value.absent(),
+    this.customServiceLimit = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  ComponentSpecsCompanion.insert({
+    this.id = const Value.absent(),
+    required String specKey,
+    required int itemId,
+    this.customStandardValue = const Value.absent(),
+    this.customServiceLimit = const Value.absent(),
+    this.unit = const Value.absent(),
+    required String updatedAt,
+  })  : specKey = Value(specKey),
+        itemId = Value(itemId),
+        updatedAt = Value(updatedAt);
+  static Insertable<ComponentSpecRow> custom({
+    Expression<int>? id,
+    Expression<String>? specKey,
+    Expression<int>? itemId,
+    Expression<double>? customStandardValue,
+    Expression<double>? customServiceLimit,
+    Expression<String>? unit,
+    Expression<String>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (specKey != null) 'spec_key': specKey,
+      if (itemId != null) 'item_id': itemId,
+      if (customStandardValue != null)
+        'custom_standard_value': customStandardValue,
+      if (customServiceLimit != null)
+        'custom_service_limit': customServiceLimit,
+      if (unit != null) 'unit': unit,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  ComponentSpecsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? specKey,
+      Value<int>? itemId,
+      Value<double?>? customStandardValue,
+      Value<double?>? customServiceLimit,
+      Value<String>? unit,
+      Value<String>? updatedAt}) {
+    return ComponentSpecsCompanion(
+      id: id ?? this.id,
+      specKey: specKey ?? this.specKey,
+      itemId: itemId ?? this.itemId,
+      customStandardValue: customStandardValue ?? this.customStandardValue,
+      customServiceLimit: customServiceLimit ?? this.customServiceLimit,
+      unit: unit ?? this.unit,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (specKey.present) {
+      map['spec_key'] = Variable<String>(specKey.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<int>(itemId.value);
+    }
+    if (customStandardValue.present) {
+      map['custom_standard_value'] =
+          Variable<double>(customStandardValue.value);
+    }
+    if (customServiceLimit.present) {
+      map['custom_service_limit'] = Variable<double>(customServiceLimit.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentSpecsCompanion(')
+          ..write('id: $id, ')
+          ..write('specKey: $specKey, ')
+          ..write('itemId: $itemId, ')
+          ..write('customStandardValue: $customStandardValue, ')
+          ..write('customServiceLimit: $customServiceLimit, ')
+          ..write('unit: $unit, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -6858,6 +7483,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OdometerLogsTable odometerLogs = $OdometerLogsTable(this);
   late final $ComponentMeasurementsTable componentMeasurements =
       $ComponentMeasurementsTable(this);
+  late final $ComponentSpecsTable componentSpecs = $ComponentSpecsTable(this);
   late final $PartsTable parts = $PartsTable(this);
   late final $MaintenanceRecordPartsTable maintenanceRecordParts =
       $MaintenanceRecordPartsTable(this);
@@ -6884,6 +7510,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       'CREATE INDEX idx_odometer_motorcycle_date ON odometer_logs (motorcycle_id, recorded_date)');
   late final Index idxMeasurementsItemDate = Index('idx_measurements_item_date',
       'CREATE INDEX idx_measurements_item_date ON component_measurements (item_id, measured_date)');
+  late final Index idxComponentSpecsItem = Index('idx_component_specs_item',
+      'CREATE INDEX idx_component_specs_item ON component_specs (item_id)');
   late final Index idxPartsItem =
       Index('idx_parts_item', 'CREATE INDEX idx_parts_item ON parts (item_id)');
   late final Index idxRecordPartsRecord = Index('idx_record_parts_record',
@@ -6917,6 +7545,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         maintenanceRecords,
         odometerLogs,
         componentMeasurements,
+        componentSpecs,
         parts,
         maintenanceRecordParts,
         partInstallations,
@@ -6930,6 +7559,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         idxRecordsMotorcycle,
         idxOdometerMotorcycleDate,
         idxMeasurementsItemDate,
+        idxComponentSpecsItem,
         idxPartsItem,
         idxRecordPartsRecord,
         idxRecordPartsPart,
@@ -7987,6 +8617,7 @@ typedef $$MaintenanceItemsTableCreateCompanionBuilder
   Value<String?> instructions,
   Value<int> sortOrder,
   Value<bool> isActive,
+  Value<bool> isUserDefined,
 });
 typedef $$MaintenanceItemsTableUpdateCompanionBuilder
     = MaintenanceItemsCompanion Function({
@@ -7996,6 +8627,7 @@ typedef $$MaintenanceItemsTableUpdateCompanionBuilder
   Value<String?> instructions,
   Value<int> sortOrder,
   Value<bool> isActive,
+  Value<bool> isUserDefined,
 });
 
 final class $$MaintenanceItemsTableReferences extends BaseReferences<
@@ -8072,6 +8704,21 @@ final class $$MaintenanceItemsTableReferences extends BaseReferences<
         manager.$state.copyWith(prefetchedData: cache));
   }
 
+  static MultiTypedResultKey<$ComponentSpecsTable, List<ComponentSpecRow>>
+      _componentSpecsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.componentSpecs,
+              aliasName: $_aliasNameGenerator(
+                  db.maintenanceItems.id, db.componentSpecs.itemId));
+
+  $$ComponentSpecsTableProcessedTableManager get componentSpecsRefs {
+    final manager = $$ComponentSpecsTableTableManager($_db, $_db.componentSpecs)
+        .filter((f) => f.itemId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_componentSpecsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
   static MultiTypedResultKey<$PartsTable, List<PartRow>> _partsRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.parts,
@@ -8130,6 +8777,9 @@ class $$MaintenanceItemsTableFilterComposer
 
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isUserDefined => $composableBuilder(
+      column: $table.isUserDefined, builder: (column) => ColumnFilters(column));
 
   $$MaintenanceCategoriesTableFilterComposer get categoryId {
     final $$MaintenanceCategoriesTableFilterComposer composer =
@@ -8217,6 +8867,27 @@ class $$MaintenanceItemsTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> componentSpecsRefs(
+      Expression<bool> Function($$ComponentSpecsTableFilterComposer f) f) {
+    final $$ComponentSpecsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.componentSpecs,
+        getReferencedColumn: (t) => t.itemId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ComponentSpecsTableFilterComposer(
+              $db: $db,
+              $table: $db.componentSpecs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<bool> partsRefs(
       Expression<bool> Function($$PartsTableFilterComposer f) f) {
     final $$PartsTableFilterComposer composer = $composerBuilder(
@@ -8286,6 +8957,10 @@ class $$MaintenanceItemsTableOrderingComposer
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isUserDefined => $composableBuilder(
+      column: $table.isUserDefined,
+      builder: (column) => ColumnOrderings(column));
+
   $$MaintenanceCategoriesTableOrderingComposer get categoryId {
     final $$MaintenanceCategoriesTableOrderingComposer composer =
         $composerBuilder(
@@ -8331,6 +9006,9 @@ class $$MaintenanceItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get isUserDefined => $composableBuilder(
+      column: $table.isUserDefined, builder: (column) => column);
 
   $$MaintenanceCategoriesTableAnnotationComposer get categoryId {
     final $$MaintenanceCategoriesTableAnnotationComposer composer =
@@ -8419,6 +9097,27 @@ class $$MaintenanceItemsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> componentSpecsRefs<T extends Object>(
+      Expression<T> Function($$ComponentSpecsTableAnnotationComposer a) f) {
+    final $$ComponentSpecsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.componentSpecs,
+        getReferencedColumn: (t) => t.itemId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ComponentSpecsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.componentSpecs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<T> partsRefs<T extends Object>(
       Expression<T> Function($$PartsTableAnnotationComposer a) f) {
     final $$PartsTableAnnotationComposer composer = $composerBuilder(
@@ -8480,6 +9179,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
         bool maintenanceRulesRefs,
         bool maintenanceRecordsRefs,
         bool componentMeasurementsRefs,
+        bool componentSpecsRefs,
         bool partsRefs,
         bool maintenanceRemindersRefs})> {
   $$MaintenanceItemsTableTableManager(
@@ -8500,6 +9200,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
             Value<String?> instructions = const Value.absent(),
             Value<int> sortOrder = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
+            Value<bool> isUserDefined = const Value.absent(),
           }) =>
               MaintenanceItemsCompanion(
             id: id,
@@ -8508,6 +9209,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
             instructions: instructions,
             sortOrder: sortOrder,
             isActive: isActive,
+            isUserDefined: isUserDefined,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -8516,6 +9218,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
             Value<String?> instructions = const Value.absent(),
             Value<int> sortOrder = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
+            Value<bool> isUserDefined = const Value.absent(),
           }) =>
               MaintenanceItemsCompanion.insert(
             id: id,
@@ -8524,6 +9227,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
             instructions: instructions,
             sortOrder: sortOrder,
             isActive: isActive,
+            isUserDefined: isUserDefined,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
@@ -8536,6 +9240,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
               maintenanceRulesRefs = false,
               maintenanceRecordsRefs = false,
               componentMeasurementsRefs = false,
+              componentSpecsRefs = false,
               partsRefs = false,
               maintenanceRemindersRefs = false}) {
             return PrefetchHooks(
@@ -8544,6 +9249,7 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
                 if (maintenanceRulesRefs) db.maintenanceRules,
                 if (maintenanceRecordsRefs) db.maintenanceRecords,
                 if (componentMeasurementsRefs) db.componentMeasurements,
+                if (componentSpecsRefs) db.componentSpecs,
                 if (partsRefs) db.parts,
                 if (maintenanceRemindersRefs) db.maintenanceReminders
               ],
@@ -8612,6 +9318,18 @@ class $$MaintenanceItemsTableTableManager extends RootTableManager<
                                 referencedItems) =>
                             referencedItems.where((e) => e.itemId == item.id),
                         typedResults: items),
+                  if (componentSpecsRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$MaintenanceItemsTableReferences
+                            ._componentSpecsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$MaintenanceItemsTableReferences(db, table, p0)
+                                .componentSpecsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.itemId == item.id),
+                        typedResults: items),
                   if (partsRefs)
                     await $_getPrefetchedData(
                         currentTable: table,
@@ -8659,6 +9377,7 @@ typedef $$MaintenanceItemsTableProcessedTableManager = ProcessedTableManager<
         bool maintenanceRulesRefs,
         bool maintenanceRecordsRefs,
         bool componentMeasurementsRefs,
+        bool componentSpecsRefs,
         bool partsRefs,
         bool maintenanceRemindersRefs})>;
 typedef $$MaintenanceRulesTableCreateCompanionBuilder
@@ -8673,6 +9392,10 @@ typedef $$MaintenanceRulesTableCreateCompanionBuilder
   Value<int?> sourcePage,
   Value<int?> intervalKm,
   Value<int?> intervalMonths,
+  Value<int?> warningKm,
+  Value<int?> warningDays,
+  Value<int?> lastCompletedKm,
+  Value<String?> lastCompletedDate,
   Value<bool> isVerified,
   Value<bool> isActive,
   Value<String?> notes,
@@ -8689,6 +9412,10 @@ typedef $$MaintenanceRulesTableUpdateCompanionBuilder
   Value<int?> sourcePage,
   Value<int?> intervalKm,
   Value<int?> intervalMonths,
+  Value<int?> warningKm,
+  Value<int?> warningDays,
+  Value<int?> lastCompletedKm,
+  Value<String?> lastCompletedDate,
   Value<bool> isVerified,
   Value<bool> isActive,
   Value<String?> notes,
@@ -8800,6 +9527,20 @@ class $$MaintenanceRulesTableFilterComposer
 
   ColumnFilters<int> get intervalMonths => $composableBuilder(
       column: $table.intervalMonths,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get warningKm => $composableBuilder(
+      column: $table.warningKm, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get warningDays => $composableBuilder(
+      column: $table.warningDays, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lastCompletedKm => $composableBuilder(
+      column: $table.lastCompletedKm,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastCompletedDate => $composableBuilder(
+      column: $table.lastCompletedDate,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isVerified => $composableBuilder(
@@ -8931,6 +9672,20 @@ class $$MaintenanceRulesTableOrderingComposer
       column: $table.intervalMonths,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get warningKm => $composableBuilder(
+      column: $table.warningKm, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get warningDays => $composableBuilder(
+      column: $table.warningDays, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lastCompletedKm => $composableBuilder(
+      column: $table.lastCompletedKm,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastCompletedDate => $composableBuilder(
+      column: $table.lastCompletedDate,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isVerified => $composableBuilder(
       column: $table.isVerified, builder: (column) => ColumnOrderings(column));
 
@@ -9013,6 +9768,18 @@ class $$MaintenanceRulesTableAnnotationComposer
 
   GeneratedColumn<int> get intervalMonths => $composableBuilder(
       column: $table.intervalMonths, builder: (column) => column);
+
+  GeneratedColumn<int> get warningKm =>
+      $composableBuilder(column: $table.warningKm, builder: (column) => column);
+
+  GeneratedColumn<int> get warningDays => $composableBuilder(
+      column: $table.warningDays, builder: (column) => column);
+
+  GeneratedColumn<int> get lastCompletedKm => $composableBuilder(
+      column: $table.lastCompletedKm, builder: (column) => column);
+
+  GeneratedColumn<String> get lastCompletedDate => $composableBuilder(
+      column: $table.lastCompletedDate, builder: (column) => column);
 
   GeneratedColumn<bool> get isVerified => $composableBuilder(
       column: $table.isVerified, builder: (column) => column);
@@ -9148,6 +9915,10 @@ class $$MaintenanceRulesTableTableManager extends RootTableManager<
             Value<int?> sourcePage = const Value.absent(),
             Value<int?> intervalKm = const Value.absent(),
             Value<int?> intervalMonths = const Value.absent(),
+            Value<int?> warningKm = const Value.absent(),
+            Value<int?> warningDays = const Value.absent(),
+            Value<int?> lastCompletedKm = const Value.absent(),
+            Value<String?> lastCompletedDate = const Value.absent(),
             Value<bool> isVerified = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -9163,6 +9934,10 @@ class $$MaintenanceRulesTableTableManager extends RootTableManager<
             sourcePage: sourcePage,
             intervalKm: intervalKm,
             intervalMonths: intervalMonths,
+            warningKm: warningKm,
+            warningDays: warningDays,
+            lastCompletedKm: lastCompletedKm,
+            lastCompletedDate: lastCompletedDate,
             isVerified: isVerified,
             isActive: isActive,
             notes: notes,
@@ -9178,6 +9953,10 @@ class $$MaintenanceRulesTableTableManager extends RootTableManager<
             Value<int?> sourcePage = const Value.absent(),
             Value<int?> intervalKm = const Value.absent(),
             Value<int?> intervalMonths = const Value.absent(),
+            Value<int?> warningKm = const Value.absent(),
+            Value<int?> warningDays = const Value.absent(),
+            Value<int?> lastCompletedKm = const Value.absent(),
+            Value<String?> lastCompletedDate = const Value.absent(),
             Value<bool> isVerified = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<String?> notes = const Value.absent(),
@@ -9193,6 +9972,10 @@ class $$MaintenanceRulesTableTableManager extends RootTableManager<
             sourcePage: sourcePage,
             intervalKm: intervalKm,
             intervalMonths: intervalMonths,
+            warningKm: warningKm,
+            warningDays: warningDays,
+            lastCompletedKm: lastCompletedKm,
+            lastCompletedDate: lastCompletedDate,
             isVerified: isVerified,
             isActive: isActive,
             notes: notes,
@@ -11636,6 +12419,311 @@ typedef $$ComponentMeasurementsTableProcessedTableManager
             bool itemId,
             bool recordId,
             bool attachmentsRefs})>;
+typedef $$ComponentSpecsTableCreateCompanionBuilder = ComponentSpecsCompanion
+    Function({
+  Value<int> id,
+  required String specKey,
+  required int itemId,
+  Value<double?> customStandardValue,
+  Value<double?> customServiceLimit,
+  Value<String> unit,
+  required String updatedAt,
+});
+typedef $$ComponentSpecsTableUpdateCompanionBuilder = ComponentSpecsCompanion
+    Function({
+  Value<int> id,
+  Value<String> specKey,
+  Value<int> itemId,
+  Value<double?> customStandardValue,
+  Value<double?> customServiceLimit,
+  Value<String> unit,
+  Value<String> updatedAt,
+});
+
+final class $$ComponentSpecsTableReferences extends BaseReferences<
+    _$AppDatabase, $ComponentSpecsTable, ComponentSpecRow> {
+  $$ComponentSpecsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $MaintenanceItemsTable _itemIdTable(_$AppDatabase db) =>
+      db.maintenanceItems.createAlias($_aliasNameGenerator(
+          db.componentSpecs.itemId, db.maintenanceItems.id));
+
+  $$MaintenanceItemsTableProcessedTableManager? get itemId {
+    if ($_item.itemId == null) return null;
+    final manager =
+        $$MaintenanceItemsTableTableManager($_db, $_db.maintenanceItems)
+            .filter((f) => f.id($_item.itemId!));
+    final item = $_typedResult.readTableOrNull(_itemIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ComponentSpecsTableFilterComposer
+    extends Composer<_$AppDatabase, $ComponentSpecsTable> {
+  $$ComponentSpecsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get specKey => $composableBuilder(
+      column: $table.specKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get customStandardValue => $composableBuilder(
+      column: $table.customStandardValue,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get customServiceLimit => $composableBuilder(
+      column: $table.customServiceLimit,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get unit => $composableBuilder(
+      column: $table.unit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  $$MaintenanceItemsTableFilterComposer get itemId {
+    final $$MaintenanceItemsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.itemId,
+        referencedTable: $db.maintenanceItems,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MaintenanceItemsTableFilterComposer(
+              $db: $db,
+              $table: $db.maintenanceItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ComponentSpecsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ComponentSpecsTable> {
+  $$ComponentSpecsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get specKey => $composableBuilder(
+      column: $table.specKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get customStandardValue => $composableBuilder(
+      column: $table.customStandardValue,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get customServiceLimit => $composableBuilder(
+      column: $table.customServiceLimit,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+      column: $table.unit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  $$MaintenanceItemsTableOrderingComposer get itemId {
+    final $$MaintenanceItemsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.itemId,
+        referencedTable: $db.maintenanceItems,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MaintenanceItemsTableOrderingComposer(
+              $db: $db,
+              $table: $db.maintenanceItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ComponentSpecsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ComponentSpecsTable> {
+  $$ComponentSpecsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get specKey =>
+      $composableBuilder(column: $table.specKey, builder: (column) => column);
+
+  GeneratedColumn<double> get customStandardValue => $composableBuilder(
+      column: $table.customStandardValue, builder: (column) => column);
+
+  GeneratedColumn<double> get customServiceLimit => $composableBuilder(
+      column: $table.customServiceLimit, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$MaintenanceItemsTableAnnotationComposer get itemId {
+    final $$MaintenanceItemsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.itemId,
+        referencedTable: $db.maintenanceItems,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MaintenanceItemsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.maintenanceItems,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ComponentSpecsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ComponentSpecsTable,
+    ComponentSpecRow,
+    $$ComponentSpecsTableFilterComposer,
+    $$ComponentSpecsTableOrderingComposer,
+    $$ComponentSpecsTableAnnotationComposer,
+    $$ComponentSpecsTableCreateCompanionBuilder,
+    $$ComponentSpecsTableUpdateCompanionBuilder,
+    (ComponentSpecRow, $$ComponentSpecsTableReferences),
+    ComponentSpecRow,
+    PrefetchHooks Function({bool itemId})> {
+  $$ComponentSpecsTableTableManager(
+      _$AppDatabase db, $ComponentSpecsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ComponentSpecsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ComponentSpecsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ComponentSpecsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> specKey = const Value.absent(),
+            Value<int> itemId = const Value.absent(),
+            Value<double?> customStandardValue = const Value.absent(),
+            Value<double?> customServiceLimit = const Value.absent(),
+            Value<String> unit = const Value.absent(),
+            Value<String> updatedAt = const Value.absent(),
+          }) =>
+              ComponentSpecsCompanion(
+            id: id,
+            specKey: specKey,
+            itemId: itemId,
+            customStandardValue: customStandardValue,
+            customServiceLimit: customServiceLimit,
+            unit: unit,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String specKey,
+            required int itemId,
+            Value<double?> customStandardValue = const Value.absent(),
+            Value<double?> customServiceLimit = const Value.absent(),
+            Value<String> unit = const Value.absent(),
+            required String updatedAt,
+          }) =>
+              ComponentSpecsCompanion.insert(
+            id: id,
+            specKey: specKey,
+            itemId: itemId,
+            customStandardValue: customStandardValue,
+            customServiceLimit: customServiceLimit,
+            unit: unit,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ComponentSpecsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({itemId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (itemId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.itemId,
+                    referencedTable:
+                        $$ComponentSpecsTableReferences._itemIdTable(db),
+                    referencedColumn:
+                        $$ComponentSpecsTableReferences._itemIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ComponentSpecsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ComponentSpecsTable,
+    ComponentSpecRow,
+    $$ComponentSpecsTableFilterComposer,
+    $$ComponentSpecsTableOrderingComposer,
+    $$ComponentSpecsTableAnnotationComposer,
+    $$ComponentSpecsTableCreateCompanionBuilder,
+    $$ComponentSpecsTableUpdateCompanionBuilder,
+    (ComponentSpecRow, $$ComponentSpecsTableReferences),
+    ComponentSpecRow,
+    PrefetchHooks Function({bool itemId})>;
 typedef $$PartsTableCreateCompanionBuilder = PartsCompanion Function({
   Value<int> id,
   Value<int?> itemId,
@@ -14057,6 +15145,8 @@ class $AppDatabaseManager {
       $$OdometerLogsTableTableManager(_db, _db.odometerLogs);
   $$ComponentMeasurementsTableTableManager get componentMeasurements =>
       $$ComponentMeasurementsTableTableManager(_db, _db.componentMeasurements);
+  $$ComponentSpecsTableTableManager get componentSpecs =>
+      $$ComponentSpecsTableTableManager(_db, _db.componentSpecs);
   $$PartsTableTableManager get parts =>
       $$PartsTableTableManager(_db, _db.parts);
   $$MaintenanceRecordPartsTableTableManager get maintenanceRecordParts =>

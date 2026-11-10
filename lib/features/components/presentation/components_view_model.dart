@@ -12,6 +12,12 @@ final componentMeasurementsProvider =
       .watchMeasurements(itemId: itemId);
 });
 
+/// Streams user-defined custom component specifications keyed by `specKey`.
+final userComponentSpecsProvider =
+    StreamProvider<Map<String, UserComponentSpec>>((ref) {
+  return ref.watch(componentsRepositoryProvider).watchUserSpecs();
+});
+
 class ComponentsActions extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
@@ -24,6 +30,21 @@ class ComponentsActions extends AsyncNotifier<void> {
 
   Future<String?> voidMeasurement(int id) =>
       _run(() => ref.read(componentsRepositoryProvider).voidMeasurement(id));
+
+  Future<String?> saveUserSpec({
+    required String specKey,
+    required int itemId,
+    double? customStandardValue,
+    double? customServiceLimit,
+    String unit = 'mm',
+  }) =>
+      _run(() => ref.read(componentsRepositoryProvider).saveUserSpec(
+            specKey: specKey,
+            itemId: itemId,
+            customStandardValue: customStandardValue,
+            customServiceLimit: customServiceLimit,
+            unit: unit,
+          ));
 
   Future<String?> _run(Future<void> Function() body) async {
     state = const AsyncLoading();

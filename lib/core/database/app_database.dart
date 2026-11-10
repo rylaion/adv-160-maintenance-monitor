@@ -27,6 +27,7 @@ part 'app_database.g.dart';
   MaintenanceRecords,
   OdometerLogs,
   ComponentMeasurements,
+  ComponentSpecs,
   Parts,
   MaintenanceRecordParts,
   PartInstallations,

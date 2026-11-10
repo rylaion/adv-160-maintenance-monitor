@@ -174,7 +174,7 @@ class ComponentsRepository {
                   odometerKm: Value(m.odometerKm),
                   measurementType: m.measurementType.code,
                   value: Value(m.value),
-                  unit: m.measurementType.unit,
+                  unit: m.effectiveUnit,
                   position: Value(_clean(m.position)),
                   measurementContext: Value(_clean(m.measurementContext)),
                   brand: Value(_clean(m.brand)),
@@ -221,5 +221,99 @@ class ComponentsRepository {
     await (_db.update(_db.componentMeasurements)..where((t) => t.id.equals(id)))
         .write(ComponentMeasurementsCompanion(
             voidedAt: Value(_clock().toIso8601String())));
+  }
+
+  /// Watches all user-defined custom component specifications, keyed by `specKey`.
+  Stream<Map<String, UserComponentSpec>> watchUserSpecs() async* {
+    yield await loadUserSpecs();
+    final updates = _db.tableUpdates(TableUpdateQuery.onAllTables([
+      _db.componentSpecs,
+    ]));
+    await for (final _ in updates) {
+      yield await loadUserSpecs();
+    }
+  }
+
+  Future<Map<String, UserComponentSpec>> loadUserSpecs() async {
+    final rows = await _db.select(_db.componentSpecs).get();
+    return {
+      for (final r in rows)
+        r.specKey: UserComponentSpec(
+          specKey: r.specKey,
+          itemId: r.itemId,
+          customStandardValue: r.customStandardValue,
+          customServiceLimit: r.customServiceLimit,
+          unit: r.unit,
+        ),
+    };
+  }
+
+  /// Saves or updates a user-defined custom component specification limit.
+  Future<void> saveUserSpec({
+    required String specKey,
+    required int itemId,
+    double? customStandardValue,
+    double? customServiceLimit,
+    String unit = 'mm',
+  }) async {
+    if (customStandardValue != null &&
+        (customStandardValue.isNaN ||
+            customStandardValue.isInfinite ||
+            customStandardValue <= 0)) {
+      throw const ComponentException(
+          'Standard measurement must be greater than zero.');
+    }
+    if (customServiceLimit != null &&
+        (customServiceLimit.isNaN ||
+            customServiceLimit.isInfinite ||
+            customServiceLimit <= 0)) {
+      throw const ComponentException(
+          'Service limit must be greater than zero.');
+    }
+    if (customStandardValue != null &&
+        customServiceLimit != null &&
+        customServiceLimit >= customStandardValue) {
+      throw const ComponentException(
+          'Service replacement limit must be less than the standard measurement.');
+    }
+
+    final existing = await (_db.select(_db.componentSpecs)
+          ..where((t) => t.specKey.equals(specKey)))
+        .getSingleOrNull();
+
+    if (customStandardValue == null && customServiceLimit == null) {
+      if (existing != null) {
+        await (_db.delete(_db.componentSpecs)
+              ..where((t) => t.id.equals(existing.id)))
+            .go();
+      }
+      return;
+    }
+
+    final nowIso = _clock().toIso8601String();
+    if (existing == null) {
+      await _db.into(_db.componentSpecs).insert(
+            ComponentSpecsCompanion.insert(
+              specKey: specKey,
+              itemId: itemId,
+              customStandardValue: Value(customStandardValue),
+              customServiceLimit: Value(customServiceLimit),
+              unit: Value(unit.trim().isEmpty ? 'mm' : unit.trim()),
+              updatedAt: nowIso,
+            ),
+          );
+    } else {
+      await (_db.update(_db.componentSpecs)
+            ..where((t) => t.id.equals(existing.id)))
+          .write(
+        ComponentSpecsCompanion(
+          itemId: Value(itemId),
+          customStandardValue: Value(customStandardValue),
+          customServiceLimit: Value(customServiceLimit),
+          unit: Value(unit.trim().isEmpty ? 'mm' : unit.trim()),
+          updatedAt: Value(nowIso),
+        ),
+      );
+    }
   }
 }

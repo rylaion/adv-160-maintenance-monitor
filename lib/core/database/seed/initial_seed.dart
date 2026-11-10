@@ -108,12 +108,14 @@ class InitialSeed {
             'Lights/Horn' => lightsHornPreRideLabel,
             _ => null,
           };
+          final isCustomItem = itemName == 'Fuel Filter';
           await db.into(db.maintenanceItems).insert(
                 MaintenanceItemsCompanion.insert(
                   categoryId: category.id,
                   name: itemName,
                   instructions: Value(defaultInstructions),
                   sortOrder: Value(itemOrder),
+                  isUserDefined: Value(isCustomItem),
                 ),
                 mode: InsertMode.insertOrIgnore,
               );
@@ -125,6 +127,7 @@ class InitialSeed {
               .write(MaintenanceItemsCompanion(
             categoryId: Value(category.id),
             sortOrder: Value(itemOrder),
+            isUserDefined: Value(isCustomItem),
             instructions:
                 existingItem.instructions == null && defaultInstructions != null
                     ? Value(defaultInstructions)

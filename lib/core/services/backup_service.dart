@@ -84,6 +84,7 @@ class BackupService {
     final records = await _db.select(_db.maintenanceRecords).get();
     final odo = await _db.select(_db.odometerLogs).get();
     final meas = await _db.select(_db.componentMeasurements).get();
+    final specs = await _db.select(_db.componentSpecs).get();
     final parts = await _db.select(_db.parts).get();
     final recParts = await _db.select(_db.maintenanceRecordParts).get();
     final installs = await _db.select(_db.partInstallations).get();
@@ -104,6 +105,7 @@ class BackupService {
         'maintenance_records': [for (final r in records) r.toJson()],
         'odometer_logs': [for (final r in odo) r.toJson()],
         'component_measurements': [for (final r in meas) r.toJson()],
+        'component_specs': [for (final r in specs) r.toJson()],
         'parts': [for (final r in parts) r.toJson()],
         'maintenance_record_parts': [for (final r in recParts) r.toJson()],
         'part_installations': [for (final r in installs) r.toJson()],
@@ -238,6 +240,7 @@ class BackupService {
         await _db.delete(_db.partInstallations).go();
         await _db.delete(_db.maintenanceRecordParts).go();
         await _db.delete(_db.parts).go();
+        await _db.delete(_db.componentSpecs).go();
         await _db.delete(_db.componentMeasurements).go();
         await _db.customStatement(
             'UPDATE odometer_logs SET supersedes_log_id = NULL');
@@ -268,9 +271,12 @@ class BackupService {
         }
 
         for (final m in rowsOf('maintenance_items')) {
+          final copy = Map<String, dynamic>.of(m);
+          copy.putIfAbsent(
+              'isUserDefined', () => copy['name'] == 'Fuel Filter');
           await _db
               .into(_db.maintenanceItems)
-              .insert(MaintenanceItemRow.fromJson(m));
+              .insert(MaintenanceItemRow.fromJson(copy));
         }
 
         for (final m in rowsOf('maintenance_rules')) {
@@ -306,6 +312,14 @@ class BackupService {
           await _db
               .into(_db.componentMeasurements)
               .insert(ComponentMeasurementRow.fromJson(m));
+        }
+
+        if (tables['component_specs'] is List) {
+          for (final m in rowsOf('component_specs')) {
+            await _db
+                .into(_db.componentSpecs)
+                .insert(ComponentSpecRow.fromJson(m));
+          }
         }
 
         for (final m in rowsOf('parts')) {

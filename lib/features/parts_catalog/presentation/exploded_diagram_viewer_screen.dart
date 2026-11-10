@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,25 +36,13 @@ class _ExplodedDiagramViewerScreenState
   List<PartsCatalogItem> _diagramParts = [];
   bool _loadingParts = true;
   int? _highlightedRef;
-  bool _showDebugPanel = false;
-  String _imageLoadStatus = 'Loading...';
 
   @override
   void initState() {
     super.initState();
     _selectedCode = widget.initialDiagramCode;
     _highlightedRef = widget.initialRefNo;
-    _logRuntimeTrace('initState');
     _loadDiagramParts();
-  }
-
-  void _logRuntimeTrace(String event) {
-    developer.log(
-      'ExplodedDiagramViewer [$event]: partId=${widget.initialPartId}, '
-      'partNo=${widget.initialPartNumber}, expectedDiagram=${widget.initialDiagramCode}, '
-      'selectedCode=$_selectedCode, highlightedRef=$_highlightedRef',
-      name: 'adv_mon.parts_catalog',
-    );
   }
 
   @override
@@ -104,9 +91,7 @@ class _ExplodedDiagramViewerScreenState
       _selectedCode = code;
       _selectedPageIndex = 0;
       _highlightedRef = null;
-      _imageLoadStatus = 'Loading...';
     });
-    _logRuntimeTrace('selectDiagram');
     _resetZoom();
     _loadDiagramParts();
   }
@@ -233,18 +218,6 @@ class _ExplodedDiagramViewerScreenState
             tooltip: 'Next Diagram',
             onPressed: hasNext ? () => _goToNext(allDiagrams) : null,
           ),
-          IconButton(
-            icon: Icon(
-              _showDebugPanel ? Icons.bug_report : Icons.bug_report_outlined,
-              color: _showDebugPanel ? theme.colorScheme.primary : null,
-            ),
-            tooltip: _showDebugPanel
-                ? 'Hide Debug Panel'
-                : 'Show Runtime Debug Panel',
-            onPressed: () {
-              setState(() => _showDebugPanel = !_showDebugPanel);
-            },
-          ),
           PopupMenuButton<String>(
             tooltip: 'More actions',
             onSelected: (value) {
@@ -252,21 +225,8 @@ class _ExplodedDiagramViewerScreenState
               if (value == 'zoom_out') _zoomOut();
               if (value == 'fit') _resetZoom();
               if (value == 'browse') _openDiagramPicker(context, allDiagrams);
-              if (value == 'debug') {
-                setState(() => _showDebugPanel = !_showDebugPanel);
-              }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'debug',
-                child: ListTile(
-                  leading: const Icon(Icons.bug_report),
-                  title: Text(_showDebugPanel
-                      ? 'Hide Debug Panel'
-                      : 'Show Debug Panel'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
               const PopupMenuItem(
                 value: 'fit',
                 child: ListTile(
@@ -373,42 +333,11 @@ class _ExplodedDiagramViewerScreenState
                           imageAssetPath: activeImagePath,
                           diagramInfo: currentDiagram,
                           diagramCode: _selectedCode,
-                          onLoadStatusChanged: (status) {
-                            if (_imageLoadStatus != status) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  setState(() => _imageLoadStatus = status);
-                                }
-                              });
-                            }
-                          },
                         ),
                       ),
                     ),
                   ),
                 ),
-
-                // Runtime Debug Panel overlay (when toggled on)
-                if (_showDebugPanel)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    right: 10,
-                    child: _RuntimeDebugPanel(
-                      selectedPartId: widget.initialPartId,
-                      oemPartNumber: widget.initialPartNumber,
-                      partDescription: widget.initialPartName,
-                      expectedDiagramCode: widget.initialDiagramCode,
-                      actualDiagramId: currentDiagram?.id,
-                      actualDiagramCode: _selectedCode,
-                      diagramTitle: currentDiagram?.title,
-                      pdfPageNumber: activePdfPage,
-                      printedPageNumber: activePrintedPage,
-                      imageAssetPath: activeImagePath,
-                      imageLoadStatus: _imageLoadStatus,
-                      onClose: () => setState(() => _showDebugPanel = false),
-                    ),
-                  ),
 
                 // Multi-page switcher pill (Bottom Left of Image Canvas)
                 if (currentDiagram != null && currentDiagram.pageCount > 1)
@@ -691,18 +620,15 @@ class _CataloguePageImage extends StatelessWidget {
     required this.imageAssetPath,
     required this.diagramInfo,
     required this.diagramCode,
-    this.onLoadStatusChanged,
   });
 
   final String imageAssetPath;
   final PartsCatalogDiagramInfo? diagramInfo;
   final String diagramCode;
-  final ValueChanged<String>? onLoadStatusChanged;
 
   @override
   Widget build(BuildContext context) {
     if (imageAssetPath.isEmpty) {
-      onLoadStatusChanged?.call('No image path');
       return _buildFallback(context);
     }
 
@@ -726,7 +652,6 @@ class _CataloguePageImage extends StatelessWidget {
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
           errorBuilder: (ctx, err, stack) {
-            onLoadStatusChanged?.call('Error loading asset ($err)');
             return Container(
               width: 360,
               padding: const EdgeInsets.all(24),
@@ -772,7 +697,6 @@ class _CataloguePageImage extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            onLoadStatusChanged?.call('Loaded');
             return child;
           },
         ),
@@ -817,143 +741,6 @@ class _CataloguePageImage extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.outline,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Runtime Debug Panel for inspecting Part -> Diagram -> Asset association
-class _RuntimeDebugPanel extends StatelessWidget {
-  const _RuntimeDebugPanel({
-    required this.selectedPartId,
-    required this.oemPartNumber,
-    required this.partDescription,
-    required this.expectedDiagramCode,
-    required this.actualDiagramId,
-    required this.actualDiagramCode,
-    required this.diagramTitle,
-    required this.pdfPageNumber,
-    required this.printedPageNumber,
-    required this.imageAssetPath,
-    required this.imageLoadStatus,
-    required this.onClose,
-  });
-
-  final int? selectedPartId;
-  final String? oemPartNumber;
-  final String? partDescription;
-  final String? expectedDiagramCode;
-  final int? actualDiagramId;
-  final String actualDiagramCode;
-  final String? diagramTitle;
-  final int? pdfPageNumber;
-  final int? printedPageNumber;
-  final String imageAssetPath;
-  final String imageLoadStatus;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isMatch =
-        expectedDiagramCode == null || expectedDiagramCode == actualDiagramCode;
-
-    return Card(
-      elevation: 6,
-      color: theme.colorScheme.surface.withOpacity(0.96),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isMatch ? theme.colorScheme.primary : Colors.orange,
-          width: 1.5,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.bug_report,
-                  size: 18,
-                  color: isMatch ? theme.colorScheme.primary : Colors.orange,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Runtime Trace & Mapping Debug',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onClose,
-                ),
-              ],
-            ),
-            const Divider(height: 12),
-            if (selectedPartId != null || oemPartNumber != null) ...[
-              _row('Selected Part ID', '#$selectedPartId'),
-              _row('OEM Part Number', oemPartNumber ?? 'N/A'),
-              _row('Part Name', partDescription ?? 'N/A'),
-              _row('Expected Diagram', expectedDiagramCode ?? 'N/A'),
-            ],
-            _row('Active Diagram Code', actualDiagramCode),
-            _row('Diagram Record ID', actualDiagramId?.toString() ?? 'N/A'),
-            _row('Diagram Title', diagramTitle ?? 'N/A'),
-            _row('Catalogue Page',
-                'Printed p. ${printedPageNumber ?? "?"} (PDF p. ${pdfPageNumber ?? "?"})'),
-            _row('Image Asset Path', imageAssetPath, mono: true),
-            _row(
-              'Image Status',
-              imageLoadStatus,
-              color: imageLoadStatus == 'Loaded'
-                  ? Colors.green
-                  : (imageLoadStatus.contains('Error')
-                      ? Colors.red
-                      : Colors.orange),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _row(String label, String value, {bool mono = false, Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 11,
-                fontFamily: mono ? 'monospace' : null,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
             ),
           ),
         ],

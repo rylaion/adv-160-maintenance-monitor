@@ -1,7 +1,7 @@
 name: adv_mon
 description: ADV-MON - Honda ADV 160 Maintenance Monitor. Offline maintenance logbook.
 publish_to: "none"
-version: 0.3.0+4
+version: 0.3.1+5
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -52,6 +52,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
-    - assets/images/parts_catalog/adv160_2023/diagrams/
     - assets/images/parts_catalog/adv160_2023/pages/
     - assets/data/

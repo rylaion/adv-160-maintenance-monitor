@@ -40,16 +40,27 @@ class _PartCatalogDetailScreenState
   void _recordReplacement() {
     if (_part == null) return;
     final itemId = _part!.maintenanceItemId;
-    final query = [
-      if (itemId != null) 'itemId=$itemId',
-      'action=REPLACE',
-      'notes=Replaced with genuine Honda OEM ${_part!.officialName} (${_part!.partNumber})',
-      'partName=${Uri.encodeComponent(_part!.officialName)}',
-      'partNo=${Uri.encodeComponent(_part!.partNumber)}',
-      'brand=${Uri.encodeComponent("Honda Genuine OEM")}',
-    ].join('&');
+    final notesBuf = StringBuffer();
+    notesBuf.write(
+        'Replaced with genuine Honda OEM ${_part!.officialName} (${_part!.partNumber}).');
+    notesBuf.write(' Category: ${_part!.category}.');
+    if (_part!.diagramNumber != null) {
+      notesBuf.write(' Diagram: ${_part!.diagramReferenceLabel}.');
+    }
 
-    context.push('/maintenance/record?$query');
+    final uri = Uri(
+      path: '/maintenance/record',
+      queryParameters: {
+        if (itemId != null) 'itemId': '$itemId',
+        'action': 'REPLACE',
+        'notes': notesBuf.toString(),
+        'partName': _part!.officialName,
+        'partNo': _part!.partNumber,
+        'brand': 'Honda Genuine OEM',
+      },
+    );
+
+    context.push(uri.toString());
   }
 
   @override

@@ -43,6 +43,9 @@ class InteractiveOsmMap extends ConsumerStatefulWidget {
 class _InteractiveOsmMapState extends ConsumerState<InteractiveOsmMap> {
   late final MapController _controller;
   bool _ownsController = false;
+  int _tileErrorCount = 0;
+  bool _tileLoadError = false;
+  int _tileRetryKey = 0;
 
   @override
   void initState() {
@@ -53,6 +56,14 @@ class _InteractiveOsmMapState extends ConsumerState<InteractiveOsmMap> {
       _controller = MapController();
       _ownsController = true;
     }
+  }
+
+  void _retryTileLoading() {
+    setState(() {
+      _tileErrorCount = 0;
+      _tileLoadError = false;
+      _tileRetryKey++;
+    });
   }
 
   @override
@@ -198,13 +209,20 @@ class _InteractiveOsmMapState extends ConsumerState<InteractiveOsmMap> {
           children: [
             // OpenStreetMap Configurable Tile Layer
             TileLayer(
-              key: ValueKey(mapState.activeConfig.urlTemplate),
+              key: ValueKey(
+                  '${mapState.activeConfig.urlTemplate}_$_tileRetryKey'),
               urlTemplate: mapState.activeConfig.urlTemplate,
               subdomains: mapState.activeConfig.subdomains,
               userAgentPackageName: mapState.activeConfig.userAgentPackageName,
               minZoom: mapState.activeConfig.minZoom,
               maxZoom: mapState.activeConfig.maxZoom,
               tileProvider: NetworkTileProvider(),
+              errorTileCallback: (tile, error, stackTrace) {
+                _tileErrorCount++;
+                if (_tileErrorCount >= 4 && !_tileLoadError && mounted) {
+                  setState(() => _tileLoadError = true);
+                }
+              },
             ),
 
             // Additional dynamic layers (e.g., polylines, waypoints, routes)
@@ -222,49 +240,100 @@ class _InteractiveOsmMapState extends ConsumerState<InteractiveOsmMap> {
           ],
         ),
 
-        // Floating On-Screen Map Controls (Optimized for motorcycle gloves)
+        // Tile Loading Offline/Error Notice Banner with Retry
+        if (_tileLoadError)
+          Positioned(
+            top: 80,
+            left: 16,
+            right: 76,
+            child: Material(
+              color: Colors.amber.shade900.withAlpha(235),
+              borderRadius: BorderRadius.circular(12),
+              elevation: 4,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.cloud_off, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Map tiles offline. Route/telemetry active.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      onPressed: _retryTileLoading,
+                      child: const Text(
+                        'RETRY',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // Floating On-Screen Map Controls (Placed on upper-right, free of HUD overlap)
         if (widget.showControls)
           Positioned(
             right: 16,
-            bottom: 32,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Compass / Reset North
-                _MapControlButton(
-                  tooltip: 'Reset North',
-                  icon: Transform.rotate(
-                    angle: -(mapState.rotation * (math.pi / 180)),
-                    child:
-                        const Icon(Icons.navigation, color: Colors.redAccent),
+            top: 80,
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Compass / Reset North
+                  _MapControlButton(
+                    tooltip: 'Reset North',
+                    icon: Transform.rotate(
+                      angle: -(mapState.rotation * (math.pi / 180)),
+                      child:
+                          const Icon(Icons.navigation, color: Colors.redAccent),
+                    ),
+                    onPressed: _resetNorth,
                   ),
-                  onPressed: _resetNorth,
-                ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                // Tile Layer Selector
-                _MapControlButton(
-                  tooltip: 'Map Styles & Providers',
-                  icon: const Icon(Icons.layers),
-                  onPressed: () => _showTileServerPicker(context),
-                ),
-                const SizedBox(height: 8),
+                  // Tile Layer Selector
+                  _MapControlButton(
+                    tooltip: 'Map Styles & Providers',
+                    icon: const Icon(Icons.layers),
+                    onPressed: () => _showTileServerPicker(context),
+                  ),
+                  const SizedBox(height: 8),
 
-                // Zoom In
-                _MapControlButton(
-                  tooltip: 'Zoom In',
-                  icon: const Icon(Icons.add),
-                  onPressed: _zoomIn,
-                ),
-                const SizedBox(height: 4),
+                  // Zoom In
+                  _MapControlButton(
+                    tooltip: 'Zoom In',
+                    icon: const Icon(Icons.add),
+                    onPressed: _zoomIn,
+                  ),
+                  const SizedBox(height: 4),
 
-                // Zoom Out
-                _MapControlButton(
-                  tooltip: 'Zoom Out',
-                  icon: const Icon(Icons.remove),
-                  onPressed: _zoomOut,
-                ),
-              ],
+                  // Zoom Out
+                  _MapControlButton(
+                    tooltip: 'Zoom Out',
+                    icon: const Icon(Icons.remove),
+                    onPressed: _zoomOut,
+                  ),
+                ],
+              ),
             ),
           ),
       ],

@@ -283,75 +283,91 @@ class _LiveMapNavigationScreenState
                       child: IconButton(
                         icon: const Icon(Icons.alt_route,
                             color: Colors.blueAccent),
-                        tooltip: 'Plan Motorcycle Route',
+                        tooltip: 'Plan Route',
                         onPressed: () => context.push('/map/plan'),
                       ),
                     ),
                     const SizedBox(width: 8),
 
-                    // Offline Maps Manager Launcher
+                    // More Controls Menu (Offline Maps, Night Ride, Battery Saver)
                     Material(
                       color: theme.colorScheme.surface.withAlpha(235),
                       shape: const CircleBorder(),
                       elevation: 3,
-                      child: IconButton(
-                        icon: const Icon(Icons.download_for_offline,
-                            color: Colors.amber),
-                        tooltip: 'Offline Maps & Regions',
-                        onPressed: () => context.push('/map/offline'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Quick Night Ride Toggle
-                    Material(
-                      color: theme.colorScheme.surface.withAlpha(235),
-                      shape: const CircleBorder(),
-                      elevation: 3,
-                      child: IconButton(
-                        icon: Icon(
-                          isNightMode ? Icons.wb_sunny : Icons.nightlight,
-                          color: isNightMode ? Colors.amber : Colors.blueGrey,
-                        ),
-                        tooltip: isNightMode ? 'Day Mode' : 'Night Ride Mode',
-                        onPressed: () {
-                          ref
-                              .read(mapViewModelProvider.notifier)
-                              .toggleNightMode();
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert),
+                        tooltip: 'Map Settings & Modes',
+                        onSelected: (val) {
+                          if (val == 'offline') {
+                            context.push('/map/offline');
+                          } else if (val == 'night') {
+                            ref
+                                .read(mapViewModelProvider.notifier)
+                                .toggleNightMode();
+                          } else if (val == 'battery') {
+                            final next = !mapState.isBatterySaverMode;
+                            ref
+                                .read(mapViewModelProvider.notifier)
+                                .toggleBatterySaverMode();
+                            ref
+                                .read(liveLocationServiceProvider)
+                                .setBatterySaverMode(next);
+                            ref
+                                .read(gpsTrackingServiceProvider)
+                                .setBatterySaver(next);
+                          }
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Battery Saver Mode Toggle
-                    Material(
-                      color: theme.colorScheme.surface.withAlpha(235),
-                      shape: const CircleBorder(),
-                      elevation: 3,
-                      child: IconButton(
-                        icon: Icon(
-                          mapState.isBatterySaverMode
-                              ? Icons.battery_saver
-                              : Icons.battery_charging_full,
-                          color: mapState.isBatterySaverMode
-                              ? Colors.green
-                              : Colors.blueGrey,
-                        ),
-                        tooltip: mapState.isBatterySaverMode
-                            ? 'Battery Saver Active'
-                            : 'Enable Battery Saver',
-                        onPressed: () {
-                          final next = !mapState.isBatterySaverMode;
-                          ref
-                              .read(mapViewModelProvider.notifier)
-                              .toggleBatterySaverMode();
-                          ref
-                              .read(liveLocationServiceProvider)
-                              .setBatterySaverMode(next);
-                          ref
-                              .read(gpsTrackingServiceProvider)
-                              .setBatterySaver(next);
-                        },
+                        itemBuilder: (ctx) => [
+                          const PopupMenuItem(
+                            value: 'offline',
+                            child: Row(
+                              children: [
+                                Icon(Icons.download_for_offline,
+                                    color: Colors.amber),
+                                SizedBox(width: 10),
+                                Text('Offline Maps & MBTiles'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'night',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isNightMode
+                                      ? Icons.wb_sunny
+                                      : Icons.nightlight,
+                                  color: isNightMode
+                                      ? Colors.amber
+                                      : Colors.blueGrey,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(isNightMode
+                                    ? 'Daylight Mode'
+                                    : 'Night Ride Mode'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'battery',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  mapState.isBatterySaverMode
+                                      ? Icons.battery_saver
+                                      : Icons.battery_charging_full,
+                                  color: mapState.isBatterySaverMode
+                                      ? Colors.green
+                                      : Colors.blueGrey,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(mapState.isBatterySaverMode
+                                    ? 'Disable Battery Saver'
+                                    : 'Enable Battery Saver'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -414,12 +430,15 @@ class _LiveMapNavigationScreenState
           Positioned(
             left: 16,
             right: 16,
-            bottom: 24,
-            child: LiveNavigationHud(
-              onStartTrip: _handleStartTrip,
-              onPauseTrip: _handlePauseTrip,
-              onResumeTrip: _handleResumeTrip,
-              onStopTrip: _handleStopTrip,
+            bottom: 16,
+            child: SafeArea(
+              top: false,
+              child: LiveNavigationHud(
+                onStartTrip: _handleStartTrip,
+                onPauseTrip: _handlePauseTrip,
+                onResumeTrip: _handleResumeTrip,
+                onStopTrip: _handleStopTrip,
+              ),
             ),
           ),
 

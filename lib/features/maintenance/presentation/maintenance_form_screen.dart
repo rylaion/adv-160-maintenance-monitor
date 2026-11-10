@@ -120,14 +120,15 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
     }
     if (widget.initialPartName != null &&
         widget.initialPartName!.trim().isNotEmpty) {
-      _parts.add(
-        _PartDraft(
-          name: widget.initialPartName!.trim(),
-          partNumber: widget.initialPartNumber?.trim() ?? '',
-          brand: widget.initialBrand?.trim() ?? 'Honda Genuine OEM',
-          trackInstallation: true,
-        ),
+      final draft = _PartDraft(
+        name: widget.initialPartName!.trim(),
+        partNumber: widget.initialPartNumber?.trim() ?? '',
+        brand: widget.initialBrand?.trim() ?? 'Honda Genuine OEM',
+        trackInstallation: true,
       );
+      draft.quantity.addListener(_recomputeTotal);
+      draft.unitCostPesos.addListener(_recomputeTotal);
+      _parts.add(draft);
     }
     _date = AppDates.todayManila(ref.read(clockProvider)());
     _laborPesos.addListener(_recomputeTotal);
@@ -348,7 +349,13 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
       }
 
       if (!mounted) return;
-      if (context.canPop()) context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maintenance record saved successfully.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      if (context.canPop()) context.pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
@@ -380,7 +387,8 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
         error: (e, _) => Center(child: Text('Could not load items: $e')),
         data: (o) {
           final items = o.snapshot.items;
-          if (_itemId == null && items.isNotEmpty) {
+          if ((_itemId == null || !items.any((i) => i.id == _itemId)) &&
+              items.isNotEmpty) {
             _itemId = items.first.id;
           }
           if (_odometer.text.isEmpty &&

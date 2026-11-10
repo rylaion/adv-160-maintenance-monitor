@@ -270,16 +270,28 @@ class _PartsCatalogScreenState extends ConsumerState<PartsCatalogScreen> {
                                     ),
                                     onPressed: () {
                                       final km = item.maintenanceItemId;
-                                      final query = [
-                                        if (km != null) 'itemId=$km',
-                                        'action=REPLACE',
-                                        'notes=Replaced with OEM ${item.officialName} (${item.partNumber})',
-                                        'partName=${Uri.encodeComponent(item.officialName)}',
-                                        'partNo=${Uri.encodeComponent(item.partNumber)}',
-                                        'brand=${Uri.encodeComponent("Honda Genuine OEM")}',
-                                      ].join('&');
-                                      context
-                                          .push('/maintenance/record?$query');
+                                      final notesBuf = StringBuffer();
+                                      notesBuf.write(
+                                          'Replaced with OEM ${item.officialName} (${item.partNumber}).');
+                                      notesBuf.write(
+                                          ' Category: ${item.category}.');
+                                      if (item.diagramNumber != null) {
+                                        notesBuf.write(
+                                            ' Diagram: ${item.diagramReferenceLabel}.');
+                                      }
+
+                                      final uri = Uri(
+                                        path: '/maintenance/record',
+                                        queryParameters: {
+                                          if (km != null) 'itemId': '$km',
+                                          'action': 'REPLACE',
+                                          'notes': notesBuf.toString(),
+                                          'partName': item.officialName,
+                                          'partNo': item.partNumber,
+                                          'brand': 'Honda Genuine OEM',
+                                        },
+                                      );
+                                      context.push(uri.toString());
                                     },
                                     icon: const Icon(
                                         Icons.build_circle_outlined,

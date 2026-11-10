@@ -145,6 +145,9 @@ class _ExplodedDiagramViewerScreenState
                   child: Center(
                     child: _DiagramGraphicView(
                       diagramCode: _selectedCode,
+                      diagramInfo: diagramsAsync.valueOrNull
+                          ?.where((d) => d.diagramCode == _selectedCode)
+                          .firstOrNull,
                       parts: _diagramParts,
                       highlightedRef: _highlightedRef,
                       onRefSelected: (ref) {
@@ -235,15 +238,27 @@ class _ExplodedDiagramViewerScreenState
                               ),
                               onPressed: () {
                                 final km = part.maintenanceItemId;
-                                final query = [
-                                  if (km != null) 'itemId=$km',
-                                  'action=REPLACE',
-                                  'notes=Replaced with genuine Honda OEM ${part.officialName} (${part.partNumber})',
-                                  'partName=${Uri.encodeComponent(part.officialName)}',
-                                  'partNo=${Uri.encodeComponent(part.partNumber)}',
-                                  'brand=${Uri.encodeComponent("Honda Genuine OEM")}',
-                                ].join('&');
-                                context.push('/maintenance/record?$query');
+                                final notesBuf = StringBuffer();
+                                notesBuf.write(
+                                    'Replaced with genuine Honda OEM ${part.officialName} (${part.partNumber}).');
+                                notesBuf.write(' Category: ${part.category}.');
+                                if (part.diagramNumber != null) {
+                                  notesBuf.write(
+                                      ' Diagram: ${part.diagramReferenceLabel}.');
+                                }
+
+                                final uri = Uri(
+                                  path: '/maintenance/record',
+                                  queryParameters: {
+                                    if (km != null) 'itemId': '$km',
+                                    'action': 'REPLACE',
+                                    'notes': notesBuf.toString(),
+                                    'partName': part.officialName,
+                                    'partNo': part.partNumber,
+                                    'brand': 'Honda Genuine OEM',
+                                  },
+                                );
+                                context.push(uri.toString());
                               },
                               child: const Text('Record',
                                   style: TextStyle(fontSize: 12)),
@@ -268,12 +283,14 @@ class _ExplodedDiagramViewerScreenState
 class _DiagramGraphicView extends StatelessWidget {
   const _DiagramGraphicView({
     required this.diagramCode,
+    this.diagramInfo,
     required this.parts,
     this.highlightedRef,
     required this.onRefSelected,
   });
 
   final String diagramCode;
+  final PartsCatalogDiagramInfo? diagramInfo;
   final List<PartsCatalogItem> parts;
   final int? highlightedRef;
   final ValueChanged<int> onRefSelected;
@@ -281,10 +298,11 @@ class _DiagramGraphicView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final imagePath = diagramInfo?.imageAssetPath;
 
     return Container(
-      width: 360,
-      height: 300,
+      width: 380,
+      constraints: const BoxConstraints(minHeight: 320),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -298,50 +316,124 @@ class _DiagramGraphicView extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // Background technical grid watermark
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _BlueprintGridPainter(
-                lineColor: theme.colorScheme.outlineVariant.withOpacity(0.3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Background technical blueprint grid
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _BlueprintGridPainter(
+                  lineColor: theme.colorScheme.outlineVariant.withOpacity(0.25),
+                ),
               ),
             ),
-          ),
-          // Schematic Assembly Illustration
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _diagramIcon(diagramCode),
-                  size: 80,
-                  color: theme.colorScheme.primary.withOpacity(0.7),
+
+            // If actual image asset is provided, display image with loading & error states
+            if (imagePath != null && imagePath.isNotEmpty)
+              Positioned.fill(
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (ctx, err, stack) =>
+                      _buildUnavailableNotice(context),
+                  frameBuilder: (ctx, child, frame, wasSync) {
+                    if (frame == null) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return child;
+                  },
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'HONDA ADV 160 OEM DIAGRAM',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.bold,
+              )
+            else
+              _buildUnavailableNotice(context),
+
+            // Hotspot Reference Callout Chips
+            for (final part in parts)
+              if (part.referenceNumber != null)
+                _buildHotspot(context, part.referenceNumber!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnavailableNotice(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = diagramInfo?.title ?? 'Assembly Diagram';
+    final assembly = diagramInfo?.assemblyName ?? 'OEM Assembly';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _diagramIcon(diagramCode),
+              size: 56,
+              color: theme.colorScheme.primary.withOpacity(0.85),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'HONDA ADV 160 (K0W) · $diagramCode',
+              style: theme.textTheme.labelMedium?.copyWith(
+                letterSpacing: 1.5,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              assembly,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
                     color: theme.colorScheme.secondary,
                   ),
-                ),
-                Text(
-                  diagramCode,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.0,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Official schematic image not bundled in offline assets.\nView verified OEM component references below.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Hotspot Reference Callout Chips
-          for (final part in parts)
-            if (part.referenceNumber != null)
-              _buildHotspot(context, part.referenceNumber!),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -350,11 +442,26 @@ class _DiagramGraphicView extends StatelessWidget {
     switch (code) {
       case 'E-17':
         return Icons.settings_input_component;
+      case 'F-10':
+      case 'F-13':
+        return Icons.album_outlined;
       case 'F-11':
       case 'F-12':
-        return Icons.album_outlined;
+        return Icons.disc_full;
       case 'E-19':
         return Icons.air;
+      case 'E-02':
+        return Icons.bolt;
+      case 'E-08':
+        return Icons.water_drop;
+      case 'E-14':
+        return Icons.ac_unit;
+      case 'E-18':
+        return Icons.swap_vert;
+      case 'E-12':
+        return Icons.electrical_services;
+      case 'F-30':
+        return Icons.battery_charging_full;
       default:
         return Icons.build;
     }
@@ -364,7 +471,7 @@ class _DiagramGraphicView extends StatelessWidget {
     final theme = Theme.of(context);
     final isSelected = highlightedRef == refNum;
 
-    // Fixed radial coordinates on canvas based on reference index
+    // Spatial positioning coordinates on canvas based on reference index
     final offset = _getHotspotOffset(refNum, diagramCode);
 
     return Positioned(
@@ -415,22 +522,22 @@ class _DiagramGraphicView extends StatelessWidget {
   }
 
   Offset _getHotspotOffset(int refNum, String code) {
-    // Spatial positioning inside the 360x300 card for exploded parts
+    // Spatial positioning inside the 380-wide card for exploded parts
     switch (refNum) {
       case 1:
-        return const Offset(20, 30);
+        return const Offset(20, 20);
       case 2:
-        return const Offset(240, 30);
+        return const Offset(280, 20);
       case 3:
-        return const Offset(20, 110);
+        return const Offset(20, 260);
       case 4:
-        return const Offset(250, 110);
+        return const Offset(280, 260);
       case 5:
-        return const Offset(30, 200);
+        return const Offset(20, 140);
       case 8:
-        return const Offset(240, 200);
+        return const Offset(280, 140);
       case 11:
-        return const Offset(140, 240);
+        return const Offset(150, 260);
       default:
         return Offset((refNum * 45) % 260 + 20, (refNum * 65) % 220 + 20);
     }

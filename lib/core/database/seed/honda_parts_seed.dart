@@ -12,8 +12,127 @@ class HondaPartsSeed {
   static const int modelYear = 2023;
   static const String regionalVariant = 'Philippines / ASEAN';
 
+  static const List<({String code, String title, String assembly, String desc})>
+      defaultDiagrams = [
+    (
+      code: 'E-17',
+      title: 'CVT Drive Face & Driven Pulley Assembly',
+      assembly: 'CVT / Transmission',
+      desc:
+          'Exploded schematic of the primary movable drive face, ramp plate, rollers, drive belt, and driven pulley.',
+    ),
+    (
+      code: 'F-10',
+      title: 'Front Wheel & Brake Disc Assembly',
+      assembly: 'Front Wheel / Braking',
+      desc:
+          'Exploded schematic of front rim, tubeless tire, 240mm front brake disc, wheel bearings, and front axle.',
+    ),
+    (
+      code: 'F-11',
+      title: 'Front Hydraulic Brake Caliper & Pad Assembly',
+      assembly: 'Front Brake System',
+      desc:
+          'Exploded schematic of front 2-piston Nissin caliper, brake pads, pad spring, and mounting bolts.',
+    ),
+    (
+      code: 'F-12',
+      title: 'Rear Hydraulic Brake Caliper & Pad Assembly',
+      assembly: 'Rear Brake System',
+      desc:
+          'Exploded schematic of single-piston rear caliper, pads, pin bolt, and pad shims.',
+    ),
+    (
+      code: 'F-13',
+      title: 'Rear Wheel & Brake Disc Assembly',
+      assembly: 'Rear Wheel / Braking',
+      desc:
+          'Exploded schematic of rear rim, tubeless tire, 220mm rear brake disc rotor, and axle nut.',
+    ),
+    (
+      code: 'E-19',
+      title: 'Air Cleaner Case & Intake Assembly',
+      assembly: 'Air Cleaner & Fuel',
+      desc:
+          'Exploded schematic of the air filter cartridge, intake duct, drain tube, and resonator.',
+    ),
+    (
+      code: 'E-02',
+      title: 'Cylinder Head & Spark Plug Assembly',
+      assembly: 'Engine / Cylinder Head',
+      desc:
+          'Exploded schematic of cylinder head cover, gasket, and NGK spark plug.',
+    ),
+    (
+      code: 'E-08',
+      title: 'Oil Strainer, Pump & Right Crankcase',
+      assembly: 'Lubrication / Crankcase',
+      desc:
+          'Exploded schematic of engine oil strainer screen, drain plug washer, and oil pump.',
+    ),
+    (
+      code: 'E-14',
+      title: 'Water Pump & Radiator Cooling System',
+      assembly: 'Cooling System',
+      desc:
+          'Exploded schematic of water pump impeller, radiator reserve tank, and cooling hoses.',
+    ),
+    (
+      code: 'E-18',
+      title: 'Final Reduction & Transmission Case',
+      assembly: 'Transmission / Final Drive',
+      desc:
+          'Exploded schematic of final reduction gear shaft, countershaft, bearings, and oil seal.',
+    ),
+    (
+      code: 'E-12',
+      title: 'ACG Starter & Generator Assembly',
+      assembly: 'Starting / Charging System',
+      desc:
+          'Exploded schematic of ACG brushless starter generator stator and rotor flywheel.',
+    ),
+    (
+      code: 'F-30',
+      title: 'Battery & Main Electrical Harness',
+      assembly: 'Electrical System',
+      desc:
+          'Exploded schematic of YTZ6V 12V 5Ah maintenance-free battery, fuses, and battery box.',
+    ),
+  ];
+
+  Future<void> ensureDiagramsSeeded() async {
+    try {
+      final tableCheck = await db.customSelect(
+        "SELECT count(*) as c FROM sqlite_master WHERE type='table' AND name='parts_catalog_images';",
+      ).getSingle();
+      if ((tableCheck.data['c'] as int? ?? 0) == 0) {
+        return; // Table does not exist yet (e.g. during schema migration tests)
+      }
+
+      for (final d in defaultDiagrams) {
+        final existing = await (db.select(db.partsCatalogImages)
+              ..where((t) => t.diagramCode.equals(d.code)))
+            .getSingleOrNull();
+        if (existing == null) {
+          await db.into(db.partsCatalogImages).insert(
+                PartsCatalogImagesCompanion.insert(
+                  diagramCode: d.code,
+                  title: d.title,
+                  assemblyName: d.assembly,
+                  description: Value(d.desc),
+                ),
+              );
+        }
+      }
+    } catch (_) {
+      // Gracefully ignore if database is in an intermediate migration state
+    }
+  }
+
   Future<void> run() async {
     await db.transaction(() async {
+      await ensureDiagramsSeeded();
+
       final existingCount = await (db.select(db.partsCatalog)).get();
       if (existingCount.length >= 20) {
         return; // Already seeded
@@ -22,47 +141,6 @@ class HondaPartsSeed {
       // 1. Fetch Maintenance Items map to link catalog parts directly
       final items = await (db.select(db.maintenanceItems)).get();
       final itemMap = {for (final item in items) item.name: item.id};
-
-      // 2. Seed Diagrams in parts_catalog_images
-      final existingDiagrams = await (db.select(db.partsCatalogImages)).get();
-      if (existingDiagrams.isEmpty) {
-        await db.into(db.partsCatalogImages).insert(
-              PartsCatalogImagesCompanion.insert(
-                diagramCode: 'E-17',
-                title: 'CVT Drive Face & Driven Pulley Assembly',
-                assemblyName: 'CVT / Transmission',
-                description: const Value(
-                    'Exploded schematic of the primary movable drive face, ramp plate, rollers, drive belt, and driven pulley.'),
-              ),
-            );
-        await db.into(db.partsCatalogImages).insert(
-              PartsCatalogImagesCompanion.insert(
-                diagramCode: 'F-11',
-                title: 'Front Hydraulic Brake Caliper & Pad Assembly',
-                assemblyName: 'Front Brake System',
-                description: const Value(
-                    'Exploded schematic of front 2-piston Nissin caliper, brake pads, pad spring, and mounting bolts.'),
-              ),
-            );
-        await db.into(db.partsCatalogImages).insert(
-              PartsCatalogImagesCompanion.insert(
-                diagramCode: 'F-12',
-                title: 'Rear Hydraulic Brake Caliper & Pad Assembly',
-                assemblyName: 'Rear Brake System',
-                description: const Value(
-                    'Exploded schematic of single-piston rear caliper, pads, pin bolt, and pad shims.'),
-              ),
-            );
-        await db.into(db.partsCatalogImages).insert(
-              PartsCatalogImagesCompanion.insert(
-                diagramCode: 'E-19',
-                title: 'Air Cleaner Case & Intake Assembly',
-                assemblyName: 'Air Cleaner & Fuel',
-                description: const Value(
-                    'Exploded schematic of the air filter cartridge, intake duct, drain tube, and resonator.'),
-              ),
-            );
-      }
 
       // 3. Seed OEM Catalogue Parts
       final nowStr = DateTime.now().toIso8601String();

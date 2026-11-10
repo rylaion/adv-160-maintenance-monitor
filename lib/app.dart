@@ -36,7 +36,11 @@ import 'features/trips/presentation/trip_form_screen.dart';
 import 'features/trips/presentation/trips_screen.dart';
 import 'shared/widgets/app_shell.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
+
 final GoRouter appRouter = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/dashboard',
   routes: [
     StatefulShellRoute.indexedStack(
@@ -66,6 +70,7 @@ final GoRouter appRouter = GoRouter(
               ),
               GoRoute(
                 path: 'record',
+                parentNavigatorKey: rootNavigatorKey,
                 builder: (_, state) {
                   final actionParam = state.uri.queryParameters['action'];
                   MaintenanceAction? initialAction;

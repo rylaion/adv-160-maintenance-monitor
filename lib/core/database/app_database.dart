@@ -72,6 +72,7 @@ class AppDatabase extends _$AppDatabase {
           // Enforce referential integrity; protects history from accidental
           // deletion of rows that have dependents.
           await customStatement('PRAGMA foreign_keys = ON');
+          await HondaPartsSeed(this).ensureDiagramsSeeded();
         },
       );
 }

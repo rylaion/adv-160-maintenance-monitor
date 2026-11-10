@@ -100,6 +100,59 @@ void main() {
           isTrue);
     });
 
+    test('Diagram F-10 is seeded and links to Front Wheel components',
+        () async {
+      final diagrams = await repo.watchDiagrams().first;
+      expect(diagrams.any((d) => d.diagramCode == 'F-10'), isTrue);
+
+      final f10 = diagrams.firstWhere((d) => d.diagramCode == 'F-10');
+      expect(f10.title, contains('Front Wheel'));
+
+      final f10Parts = await repo.getPartsForDiagram('F-10');
+      expect(f10Parts.isNotEmpty, isTrue);
+      expect(
+          f10Parts.any((p) => p.partNumber == '45351-K0W-N01'), isTrue); // Disk
+      expect(
+          f10Parts.any((p) => p.partNumber == '44711-K0W-N01'), isTrue); // Tire
+    });
+
+    test('Record Replacement URI encoding produces valid URI without syntax errors',
+        () async {
+      final part = await repo.getPartByPartNumber('45351-K0W-N01');
+      expect(part, isNotNull);
+
+      final notesBuf = StringBuffer();
+      notesBuf.write(
+          'Replaced with genuine Honda OEM ${part!.officialName} (${part.partNumber}).');
+      notesBuf.write(' Category: ${part.category}.');
+      if (part.diagramNumber != null) {
+        notesBuf.write(' Diagram: ${part.diagramReferenceLabel}.');
+      }
+
+      final uri = Uri(
+        path: '/maintenance/record',
+        queryParameters: {
+          if (part.maintenanceItemId != null)
+            'itemId': '${part.maintenanceItemId}',
+          'action': 'REPLACE',
+          'notes': notesBuf.toString(),
+          'partName': part.officialName,
+          'partNo': part.partNumber,
+          'brand': 'Honda Genuine OEM',
+        },
+      );
+
+      final uriString = uri.toString();
+      expect(uriString, startsWith('/maintenance/record?'));
+      expect(uriString, contains('action=REPLACE'));
+
+      // Parsing the generated string must succeed without throwing FormatException
+      final parsed = Uri.parse(uriString);
+      expect(parsed.queryParameters['notes'], contains('45351-K0W-N01'));
+      expect(parsed.queryParameters['partName'], part.officialName);
+      expect(parsed.queryParameters['brand'], 'Honda Genuine OEM');
+    });
+
     test('Model compatibility reflects verified 2023 Honda ADV 160 fitment',
         () async {
       final belt = await repo.getPartByPartNumber('23100-K0W-N01');

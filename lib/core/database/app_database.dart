@@ -14,6 +14,10 @@ import 'tables/motorcycle_tables.dart';
 import 'tables/parts_tables.dart';
 import 'tables/reminder_tables.dart';
 import 'tables/rule_tables.dart';
+import 'tables/trip_tables.dart';
+import 'tables/cvt_tables.dart';
+import 'tables/parts_catalog_tables.dart';
+import 'seed/honda_parts_seed.dart';
 
 part 'app_database.g.dart';
 
@@ -33,6 +37,15 @@ part 'app_database.g.dart';
   PartInstallations,
   MaintenanceReminders,
   Attachments,
+  Trips,
+  TripWaypoints,
+  SavedLocations,
+  SavedRoutes,
+  CvtConfigurations,
+  CvtPerformanceLogs,
+  PartsCatalog,
+  PartsCatalogImages,
+  PartsCatalogCompatibility,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
@@ -52,6 +65,7 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await InitialSeed(this).run();
           await HondaScheduleSeed(this).run();
+          await HondaPartsSeed(this).run();
         },
         onUpgrade: (m, from, to) => runMigrations(this, m, from, to),
         beforeOpen: (details) async {

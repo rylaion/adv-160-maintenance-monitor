@@ -6,6 +6,10 @@ import 'core/enums/enums.dart';
 import 'core/theme/app_theme.dart';
 import 'features/components/presentation/component_detail_screen.dart';
 import 'features/components/presentation/components_screen.dart';
+import 'features/cvt/presentation/cvt_compare_screen.dart';
+import 'features/cvt/presentation/cvt_detail_screen.dart';
+import 'features/cvt/presentation/cvt_form_screen.dart';
+import 'features/cvt/presentation/cvt_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/maintenance/presentation/maintenance_form_screen.dart';
 import 'features/maintenance/presentation/maintenance_history_screen.dart';
@@ -15,11 +19,21 @@ import 'features/motorcycle/presentation/motorcycle_edit_screen.dart';
 import 'features/motorcycle/presentation/motorcycle_profile_screen.dart';
 import 'features/odometer/presentation/odometer_screen.dart';
 import 'features/parts/presentation/parts_screen.dart';
+import 'features/parts_catalog/presentation/exploded_diagram_viewer_screen.dart';
+import 'features/parts_catalog/presentation/part_catalog_detail_screen.dart';
+import 'features/parts_catalog/presentation/parts_catalog_screen.dart';
 import 'features/reminders/presentation/reminders_screen.dart';
 import 'features/reports/presentation/reports_screen.dart';
 import 'features/settings/domain/app_settings.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/settings/presentation/settings_view_model.dart';
+import 'features/navigation/presentation/screens/live_map_navigation_screen.dart';
+import 'features/navigation/presentation/screens/offline_maps_screen.dart';
+import 'features/navigation/presentation/screens/route_planning_screen.dart';
+import 'features/trips/presentation/active_gps_tracking_screen.dart';
+import 'features/trips/presentation/trip_detail_screen.dart';
+import 'features/trips/presentation/trip_form_screen.dart';
+import 'features/trips/presentation/trips_screen.dart';
 import 'shared/widgets/app_shell.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -68,6 +82,10 @@ final GoRouter appRouter = GoRouter(
                         int.tryParse(state.uri.queryParameters['km'] ?? ''),
                     editRecordId:
                         int.tryParse(state.uri.queryParameters['edit'] ?? ''),
+                    initialNotes: state.uri.queryParameters['notes'],
+                    initialPartName: state.uri.queryParameters['partName'],
+                    initialPartNumber: state.uri.queryParameters['partNo'],
+                    initialBrand: state.uri.queryParameters['brand'],
                   );
                 },
               ),
@@ -108,11 +126,88 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/parts',
-      builder: (_, __) => const PartsScreen(),
+      builder: (_, __) => const PartsCatalogScreen(),
+      routes: [
+        GoRoute(
+          path: 'inventory',
+          builder: (_, __) => const PartsScreen(),
+        ),
+        GoRoute(
+          path: 'diagrams',
+          builder: (_, __) => const ExplodedDiagramViewerScreen(),
+        ),
+        GoRoute(
+          path: 'catalog/:partId',
+          builder: (_, state) => PartCatalogDetailScreen(
+            partId: int.tryParse(state.pathParameters['partId'] ?? '') ?? 0,
+          ),
+        ),
+      ],
     ),
     GoRoute(
       path: '/reminders',
       builder: (_, __) => const RemindersScreen(),
+    ),
+    GoRoute(
+      path: '/map',
+      builder: (_, __) => const LiveMapNavigationScreen(),
+      routes: [
+        GoRoute(
+          path: 'plan',
+          builder: (_, __) => const RoutePlanningScreen(),
+        ),
+        GoRoute(
+          path: 'offline',
+          builder: (_, __) => const OfflineMapsScreen(),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/routes/plan',
+      builder: (_, __) => const RoutePlanningScreen(),
+    ),
+    GoRoute(
+      path: '/trips',
+      builder: (_, __) => const TripsScreen(),
+      routes: [
+        GoRoute(
+          path: 'add',
+          builder: (_, __) => const TripFormScreen(),
+        ),
+        GoRoute(
+          path: 'track',
+          builder: (_, __) => const ActiveGpsTrackingScreen(),
+        ),
+        GoRoute(
+          path: ':tripId',
+          builder: (_, state) => TripDetailScreen(
+            tripId: int.tryParse(state.pathParameters['tripId'] ?? '') ?? 0,
+          ),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/cvt',
+      builder: (_, __) => const CvtScreen(),
+      routes: [
+        GoRoute(
+          path: 'add',
+          builder: (_, state) => CvtFormScreen(
+            editConfigId: int.tryParse(state.uri.queryParameters['edit'] ?? ''),
+            cloneFromId: int.tryParse(state.uri.queryParameters['clone'] ?? ''),
+          ),
+        ),
+        GoRoute(
+          path: 'compare',
+          builder: (_, __) => const CvtCompareScreen(),
+        ),
+        GoRoute(
+          path: ':configId',
+          builder: (_, state) => CvtDetailScreen(
+            configId: int.tryParse(state.pathParameters['configId'] ?? '') ?? 0,
+          ),
+        ),
+      ],
     ),
     GoRoute(
       path: '/motorcycle',

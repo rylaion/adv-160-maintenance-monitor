@@ -25,8 +25,8 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.advmon.adv_mon"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         coreLibraryDesugaringEnabled = true
@@ -40,7 +40,7 @@ android {
 
     defaultConfig {
         applicationId = "com.advmon.adv_mon"
-        minSdk = 23
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName

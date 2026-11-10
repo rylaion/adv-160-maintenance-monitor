@@ -265,6 +265,11 @@ class _DetailContent extends ConsumerWidget {
                           icon: const Icon(Icons.delete_outline, size: 18),
                           label: const Text('Delete Custom Interval'),
                         ),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                        label: const Text('Find OEM Part'),
+                        onPressed: () => context.push('/parts'),
+                      ),
                     ],
                   ),
                 ],

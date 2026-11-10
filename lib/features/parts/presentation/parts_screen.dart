@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/money.dart';
@@ -403,6 +404,13 @@ class _PartsScreenState extends ConsumerState<PartsScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Parts Management'),
+          actions: [
+            TextButton.icon(
+              onPressed: () => context.push('/parts'),
+              icon: const Icon(Icons.auto_stories_outlined, size: 18),
+              label: const Text('OEM Catalogue'),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Installed Lifecycle'),

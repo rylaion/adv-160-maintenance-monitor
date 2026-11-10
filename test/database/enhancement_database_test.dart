@@ -4,10 +4,13 @@ import 'package:adv_mon/core/database/app_database.dart';
 import 'package:adv_mon/core/enums/enums.dart';
 import 'package:adv_mon/features/components/data/components_repository.dart';
 import 'package:adv_mon/features/components/domain/component_models.dart';
+import 'package:adv_mon/features/cvt/data/cvt_repository.dart';
 import 'package:adv_mon/features/maintenance/data/maintenance_repository.dart';
 import 'package:adv_mon/features/maintenance/domain/maintenance_overview.dart';
 import 'package:adv_mon/features/odometer/data/odometer_repository.dart';
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:adv_mon/features/parts_catalog/data/parts_catalog_repository.dart';
+import 'package:adv_mon/features/trips/data/trips_repository.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -191,9 +194,11 @@ void main() {
 
         await db2.close();
       } finally {
-        if (await tempDir.exists()) {
-          await tempDir.delete(recursive: true);
-        }
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
       }
     });
 
@@ -515,9 +520,369 @@ void main() {
 
         await upgradedDb.close();
       } finally {
-        if (await tempDir.exists()) {
-          await tempDir.delete(recursive: true);
-        }
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
+      }
+    });
+
+    test(
+        'Database migration v7 -> v8 creates parts catalog tables and seeds OEM parts',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('adv_mon_v7_v8_test_');
+      final dbFile = File(p.join(tempDir.path, 'v7_upgrade.sqlite'));
+
+      try {
+        final raw = raw_sqlite.sqlite3.open(dbFile.path);
+        raw.execute('PRAGMA user_version = 7');
+        raw.execute('''
+          CREATE TABLE motorcycles (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            brand TEXT NOT NULL,
+            model TEXT NOT NULL,
+            model_year INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE TABLE maintenance_categories (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            sort_order INTEGER NOT NULL
+          );
+          CREATE TABLE maintenance_items (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER NOT NULL,
+            name TEXT NOT NULL UNIQUE,
+            sort_order INTEGER NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            instructions TEXT NULL,
+            is_user_defined INTEGER NOT NULL DEFAULT 0
+          );
+          CREATE TABLE maintenance_rules (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            motorcycle_id INTEGER NOT NULL,
+            item_id INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            action TEXT NOT NULL,
+            interval_km INTEGER NULL,
+            interval_months INTEGER NULL,
+            warning_km INTEGER NULL,
+            warning_days INTEGER NULL,
+            last_completed_km INTEGER NULL,
+            last_completed_date TEXT NULL,
+            is_initial INTEGER NOT NULL DEFAULT 0,
+            is_recurring INTEGER NOT NULL DEFAULT 1,
+            is_verified INTEGER NOT NULL DEFAULT 1,
+            priority INTEGER NOT NULL DEFAULT 0,
+            notes TEXT NULL,
+            created_at TEXT NOT NULL
+          );
+          CREATE TABLE maintenance_records (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            motorcycle_id INTEGER NOT NULL,
+            item_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            performed_date TEXT NOT NULL,
+            odometer_km INTEGER NOT NULL,
+            labor_cost_centavos INTEGER NOT NULL DEFAULT 0,
+            total_cost_centavos INTEGER NOT NULL DEFAULT 0,
+            service_provider TEXT NULL,
+            notes TEXT NULL,
+            voided_at TEXT NULL,
+            supersedes_record_id INTEGER NULL,
+            created_at TEXT NOT NULL
+          );
+          CREATE TABLE cvt_configurations (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            motorcycle_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            pulley_brand_model TEXT NULL,
+            flyball_weight_grams REAL NULL,
+            flyball_arrangement TEXT NULL,
+            center_spring_rpm INTEGER NULL,
+            clutch_spring_rpm INTEGER NULL,
+            belt_brand_part_number TEXT NULL,
+            pulley_washer_thickness_mm REAL NULL,
+            clutch_bell_spec TEXT NULL,
+            exhaust_spec TEXT NULL,
+            other_mods TEXT NULL,
+            installed_date INTEGER NOT NULL,
+            installed_odometer_km INTEGER NULL,
+            is_active INTEGER NOT NULL DEFAULT 0,
+            is_archived INTEGER NOT NULL DEFAULT 0,
+            notes TEXT NULL,
+            photo_paths TEXT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+          CREATE TABLE cvt_performance_logs (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            configuration_id INTEGER NOT NULL,
+            log_date INTEGER NOT NULL,
+            acceleration_rating INTEGER NULL,
+            top_speed_kmh REAL NULL,
+            rpm_observed INTEGER NULL,
+            fuel_consumption_kpl REAL NULL,
+            vibration_rating INTEGER NULL,
+            comfort_rating INTEGER NULL,
+            overall_assessment TEXT NULL,
+            notes TEXT NULL,
+            is_measured INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL
+          );
+        ''');
+        raw.execute('''
+          INSERT INTO motorcycles (id, brand, model, model_year, created_at, updated_at)
+          VALUES (1, 'Honda', 'ADV 160', 2023, '2026-01-01', '2026-01-01');
+          INSERT INTO maintenance_categories (id, name, sort_order)
+          VALUES (1, 'Engine', 1), (3, 'CVT / Transmission', 3);
+          INSERT INTO maintenance_items (id, category_id, name, sort_order, is_active)
+          VALUES (1, 1, 'Engine Oil', 1, 1), (4, 3, 'Drive Belt', 4, 1);
+          INSERT INTO cvt_configurations (id, motorcycle_id, name, flyball_weight_grams, installed_date, is_active, created_at, updated_at)
+          VALUES (1, 1, 'Existing Setup', 19.0, 1761955200, 1, 1761955200, 1761955200);
+        ''');
+        raw.dispose();
+
+        final upgradedDb = AppDatabase(NativeDatabase(dbFile));
+        final catalogRepo = PartsCatalogRepository(upgradedDb);
+        final cvtRepo = CvtRepository(upgradedDb);
+
+        final activeCvt = await cvtRepo.getActiveConfiguration(1);
+        expect(activeCvt?.name, 'Existing Setup');
+        expect(activeCvt?.flyballWeightGrams, 19.0);
+
+        final parts = await catalogRepo.watchParts().first;
+        expect(parts.length, greaterThanOrEqualTo(20));
+
+        final belt = parts.firstWhere((p) => p.partNumber == '23100-K0W-N01');
+        expect(belt.officialName, 'Drive V-Belt');
+
+        await upgradedDb.close();
+      } finally {
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
+      }
+    });
+
+    test(
+        'Database migration v8 -> v9 adds heading and accuracy to trip_waypoints and creates saved_locations / saved_routes',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('adv_mon_v8_v9_test_');
+      final dbFile = File(p.join(tempDir.path, 'adv_mon_v8.sqlite'));
+
+      try {
+        final raw = raw_sqlite.sqlite3.open(dbFile.path);
+        raw.execute('PRAGMA user_version = 8;');
+        raw.execute('''
+          CREATE TABLE motorcycles (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            brand TEXT NOT NULL,
+            model TEXT NOT NULL,
+            model_year INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE TABLE trips (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            motorcycle_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            origin TEXT NULL,
+            destination TEXT NULL,
+            start_odometer_km INTEGER NULL,
+            end_odometer_km INTEGER NULL,
+            distance_km REAL NOT NULL,
+            start_time INTEGER NOT NULL,
+            end_time INTEGER NULL,
+            duration_seconds INTEGER NOT NULL DEFAULT 0,
+            avg_speed_kmh REAL NULL,
+            max_speed_kmh REAL NULL,
+            is_gps_tracked INTEGER NOT NULL DEFAULT 0,
+            notes TEXT NULL,
+            photo_paths TEXT NULL,
+            created_at INTEGER NOT NULL
+          );
+          CREATE TABLE trip_waypoints (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            trip_id INTEGER NOT NULL,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            altitude REAL NULL,
+            speed_kmh REAL NULL,
+            recorded_at INTEGER NOT NULL,
+            sequence INTEGER NOT NULL
+          );
+          INSERT INTO motorcycles (id, brand, model, model_year, created_at, updated_at)
+          VALUES (1, 'Honda', 'ADV 160', 2023, '2026-01-01', '2026-01-01');
+          INSERT INTO trips (id, motorcycle_id, title, category, distance_km, start_time, created_at)
+          VALUES (1, 1, 'Pre-migration Ride', 'LEISURE', 15.5, 1761955200, 1761955200);
+          INSERT INTO trip_waypoints (id, trip_id, latitude, longitude, speed_kmh, recorded_at, sequence)
+          VALUES (1, 1, 14.5800, 121.0500, 42.0, 1761955200, 0);
+        ''');
+        raw.dispose();
+
+        final upgradedDb = AppDatabase(NativeDatabase(dbFile));
+        final tripsRepo =
+            TripsRepository(upgradedDb, OdometerRepository(upgradedDb));
+
+        final trip = await tripsRepo.getTripById(1);
+        expect(trip, isNotNull);
+        expect(trip!.title, 'Pre-migration Ride');
+        expect(trip.waypoints.length, 1);
+        expect(trip.waypoints.first.latitude, 14.5800);
+        expect(trip.waypoints.first.heading, isNull);
+
+        // Verify newly created columns accept heading and accuracy
+        await upgradedDb.into(upgradedDb.tripWaypoints).insert(
+              TripWaypointsCompanion.insert(
+                tripId: 1,
+                latitude: 14.5810,
+                longitude: 121.0510,
+                heading: const Value(90.0),
+                accuracyMeters: const Value(4.5),
+                recordedAt: DateTime.now(),
+                sequence: 1,
+              ),
+            );
+
+        final updatedTrip = await tripsRepo.getTripById(1);
+        expect(updatedTrip!.waypoints.length, 2);
+        expect(updatedTrip.waypoints[1].heading, 90.0);
+        expect(updatedTrip.waypoints[1].accuracyMeters, 4.5);
+
+        // Verify saved_locations and saved_routes tables exist
+        final locCount = await upgradedDb
+            .customSelect('SELECT COUNT(*) as c FROM saved_locations')
+            .getSingle();
+        expect(locCount.read<int>('c'), 0);
+
+        final routeCount = await upgradedDb
+            .customSelect('SELECT COUNT(*) as c FROM saved_routes')
+            .getSingle();
+        expect(routeCount.read<int>('c'), 0);
+
+        await upgradedDb.close();
+      } finally {
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
+      }
+    });
+
+    test(
+        'Database migration v8 -> v9 adds heading and accuracy to trip_waypoints and creates saved_locations / saved_routes',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('adv_mon_v8_v9_test_');
+      final dbFile = File(p.join(tempDir.path, 'adv_mon_v8.sqlite'));
+
+      try {
+        final raw = raw_sqlite.sqlite3.open(dbFile.path);
+        raw.execute('PRAGMA user_version = 8;');
+        raw.execute('''
+          CREATE TABLE motorcycles (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            brand TEXT NOT NULL,
+            model TEXT NOT NULL,
+            model_year INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE TABLE trips (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            motorcycle_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            origin TEXT NULL,
+            destination TEXT NULL,
+            start_odometer_km INTEGER NULL,
+            end_odometer_km INTEGER NULL,
+            distance_km REAL NOT NULL,
+            start_time INTEGER NOT NULL,
+            end_time INTEGER NULL,
+            duration_seconds INTEGER NOT NULL DEFAULT 0,
+            avg_speed_kmh REAL NULL,
+            max_speed_kmh REAL NULL,
+            is_gps_tracked INTEGER NOT NULL DEFAULT 0,
+            notes TEXT NULL,
+            photo_paths TEXT NULL,
+            created_at INTEGER NOT NULL
+          );
+          CREATE TABLE trip_waypoints (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            trip_id INTEGER NOT NULL,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            altitude REAL NULL,
+            speed_kmh REAL NULL,
+            recorded_at INTEGER NOT NULL,
+            sequence INTEGER NOT NULL
+          );
+          INSERT INTO motorcycles (id, brand, model, model_year, created_at, updated_at)
+          VALUES (1, 'Honda', 'ADV 160', 2023, '2026-01-01', '2026-01-01');
+          INSERT INTO trips (id, motorcycle_id, title, category, distance_km, start_time, created_at)
+          VALUES (1, 1, 'Pre-migration Ride', 'LEISURE', 15.5, 1761955200, 1761955200);
+          INSERT INTO trip_waypoints (id, trip_id, latitude, longitude, speed_kmh, recorded_at, sequence)
+          VALUES (1, 1, 14.5800, 121.0500, 42.0, 1761955200, 0);
+        ''');
+        raw.dispose();
+
+        final upgradedDb = AppDatabase(NativeDatabase(dbFile));
+        final tripsRepo =
+            TripsRepository(upgradedDb, OdometerRepository(upgradedDb));
+
+        final trip = await tripsRepo.getTripById(1);
+        expect(trip, isNotNull);
+        expect(trip!.title, 'Pre-migration Ride');
+        expect(trip.waypoints.length, 1);
+        expect(trip.waypoints.first.latitude, 14.5800);
+        expect(trip.waypoints.first.heading, isNull);
+
+        // Verify newly created columns accept heading and accuracy
+        await upgradedDb.into(upgradedDb.tripWaypoints).insert(
+              TripWaypointsCompanion.insert(
+                tripId: 1,
+                latitude: 14.5810,
+                longitude: 121.0510,
+                heading: const Value(90.0),
+                accuracyMeters: const Value(4.5),
+                recordedAt: DateTime.now(),
+                sequence: 1,
+              ),
+            );
+
+        final updatedTrip = await tripsRepo.getTripById(1);
+        expect(updatedTrip!.waypoints.length, 2);
+        expect(updatedTrip.waypoints[1].heading, 90.0);
+        expect(updatedTrip.waypoints[1].accuracyMeters, 4.5);
+
+        // Verify saved_locations and saved_routes tables exist
+        final locCount = await upgradedDb
+            .customSelect('SELECT COUNT(*) as c FROM saved_locations')
+            .getSingle();
+        expect(locCount.read<int>('c'), 0);
+
+        final routeCount = await upgradedDb
+            .customSelect('SELECT COUNT(*) as c FROM saved_routes')
+            .getSingle();
+        expect(routeCount.read<int>('c'), 0);
+
+        await upgradedDb.close();
+      } finally {
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
       }
     });
   });

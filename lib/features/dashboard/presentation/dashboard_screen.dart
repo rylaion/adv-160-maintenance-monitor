@@ -10,6 +10,8 @@ import '../../maintenance/domain/maintenance_overview.dart';
 import '../../maintenance/presentation/maintenance_view_model.dart';
 import '../../maintenance/presentation/status_text.dart';
 import '../../reminders/presentation/reminders_view_model.dart';
+import '../../trips/presentation/trips_view_model.dart';
+import '../../cvt/presentation/cvt_view_model.dart';
 
 /// Dashboard driven entirely by stored data and the calculation engine.
 ///
@@ -152,6 +154,26 @@ class _Body extends StatelessWidget {
               label: const Text('Record Measurement'),
             ),
             OutlinedButton.icon(
+              onPressed: () => context.push('/map'),
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Live Map & GPS'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/trips'),
+              icon: const Icon(Icons.route),
+              label: const Text('Ride History & Trips'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/cvt'),
+              icon: const Icon(Icons.tune),
+              label: const Text('CVT Configurations'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/parts'),
+              icon: const Icon(Icons.auto_stories_outlined),
+              label: const Text('OEM Parts Catalogue'),
+            ),
+            OutlinedButton.icon(
               onPressed: () => context.push('/maintenance/history'),
               icon: const Icon(Icons.history),
               label: const Text('View Maintenance History'),
@@ -251,6 +273,12 @@ class _Body extends StatelessWidget {
             ),
           ]),
         ),
+        const SizedBox(height: 16),
+        const _DashboardTripSummary(),
+        const SizedBox(height: 16),
+        _DashboardCvtSummary(currentKm: o.currentKm),
+        const SizedBox(height: 16),
+        const _DashboardPartsCatalogSummary(),
       ],
     );
   }
@@ -379,6 +407,319 @@ class _NextMajorCheckpointCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardTripSummary extends ConsumerWidget {
+  const _DashboardTripSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(tripStatsProvider);
+    final recentAsync = ref.watch(recentTripsProvider);
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.route, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Ride History & Trips',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => context.push('/map'),
+                  icon: const Icon(Icons.map_outlined, size: 16),
+                  label: const Text('Live Map'),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/trips'),
+                  child: const Text('Trips'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            statsAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (stats) => Row(
+                children: [
+                  Expanded(
+                    child: _Metric(
+                      label: 'Total distance',
+                      value: '${stats.totalDistanceKm.toStringAsFixed(1)} km',
+                    ),
+                  ),
+                  Expanded(
+                    child: _Metric(
+                      label: 'Trips logged',
+                      value: '${stats.totalTrips}',
+                    ),
+                  ),
+                  Expanded(
+                    child: _Metric(
+                      label: 'This month',
+                      value: '${stats.monthlyDistanceKm.toStringAsFixed(1)} km',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            recentAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (recent) {
+                if (recent.isEmpty) {
+                  return Text(
+                    'No trips logged yet. Tap Record Ride or Add Trip to start tracking.',
+                    style: theme.textTheme.bodySmall,
+                  );
+                }
+                final latest = recent.first;
+                return Row(
+                  children: [
+                    Icon(
+                      latest.isGpsTracked ? Icons.gps_fixed : Icons.edit_note,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Latest: ${latest.title} (${latest.distanceKm.toStringAsFixed(1)} km) on ${AppDates.formatDate(latest.startTime)}',
+                        style: theme.textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardCvtSummary extends ConsumerWidget {
+  const _DashboardCvtSummary({this.currentKm});
+  final int? currentKm;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeConfigAsync = ref.watch(activeCvtConfigurationProvider);
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.tune, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Active CVT Setup',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/cvt'),
+                  child: const Text('Manage'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            activeConfigAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (config) {
+                if (config == null) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'No active CVT configuration set. Track your rollers, pulley, belt, and springs for optimal tuning.',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/cvt/add'),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Create CVT Setup'),
+                      ),
+                    ],
+                  );
+                }
+
+                final installedOdo = config.installedOdometerKm;
+                final kmSince = (installedOdo != null &&
+                        currentKm != null &&
+                        currentKm! >= installedOdo)
+                    ? currentKm! - installedOdo
+                    : null;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            config.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Active',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _Metric(
+                            label: 'Flyballs / Rollers',
+                            value: config.flyballWeightGrams != null
+                                ? '${config.flyballWeightGrams}g'
+                                : 'Stock',
+                          ),
+                        ),
+                        Expanded(
+                          child: _Metric(
+                            label: 'Center Spring',
+                            value: config.centerSpringRpm != null
+                                ? '${config.centerSpringRpm} RPM'
+                                : 'Stock',
+                          ),
+                        ),
+                        Expanded(
+                          child: _Metric(
+                            label: 'Distance on Setup',
+                            value:
+                                kmSince != null ? StatusText.km(kmSince) : '—',
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (config.pulleyBrandModel != null ||
+                        config.beltBrandPartNumber != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        [
+                          if (config.pulleyBrandModel != null)
+                            'Pulley: ${config.pulleyBrandModel}',
+                          if (config.beltBrandPartNumber != null)
+                            'Belt: ${config.beltBrandPartNumber}',
+                        ].join(' · '),
+                        style: theme.textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardPartsCatalogSummary extends StatelessWidget {
+  const _DashboardPartsCatalogSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.auto_stories, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Honda ADV 160 OEM Parts Catalogue',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/parts'),
+                  child: const Text('Browse All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Verified genuine Honda part numbers, service limits, and exploded schematics.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.settings_input_component, size: 16),
+                  label: const Text('CVT Belt 23100-K0W-N01'),
+                  onPressed: () => context.push('/parts'),
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.album_outlined, size: 16),
+                  label: const Text('Brake Pads 06455-KRE-G01'),
+                  onPressed: () => context.push('/parts'),
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.air, size: 16),
+                  label: const Text('Air Filter 17210-K0W-N00'),
+                  onPressed: () => context.push('/parts'),
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.schema_outlined, size: 16),
+                  label: const Text('Exploded Diagrams'),
+                  onPressed: () => context.push('/parts/diagrams'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -30,6 +30,10 @@ class AppDates {
   /// Formats a date for display, e.g. "09 Nov 2026".
   static String formatDate(DateTime d) => DateFormat('dd MMM yyyy').format(d);
 
+  /// Formats a date & time for display, e.g. "09 Nov 2026, 08:30".
+  static String formatDateTime(DateTime d) =>
+      DateFormat('dd MMM yyyy, HH:mm').format(d);
+
   /// Parses an ISO 8601 string into Manila wall-clock time.
   static DateTime? parseIso(String? iso) {
     if (iso == null) return null;

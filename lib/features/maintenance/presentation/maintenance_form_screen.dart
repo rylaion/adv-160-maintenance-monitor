@@ -9,6 +9,7 @@ import '../../../shared/providers/providers.dart';
 import '../../../shared/widgets/photo_attachments_field.dart';
 import '../../components/domain/component_models.dart';
 import '../../components/presentation/components_view_model.dart';
+import '../../cvt/presentation/cvt_view_model.dart';
 import '../../motorcycle/presentation/motorcycle_view_model.dart';
 import '../../parts/domain/part_models.dart';
 import '../data/maintenance_repository.dart';
@@ -27,12 +28,20 @@ class MaintenanceFormScreen extends ConsumerStatefulWidget {
     this.initialAction,
     this.initialOdometerKm,
     this.editRecordId,
+    this.initialNotes,
+    this.initialPartName,
+    this.initialPartNumber,
+    this.initialBrand,
   });
 
   final int? initialItemId;
   final MaintenanceAction? initialAction;
   final int? initialOdometerKm;
   final int? editRecordId;
+  final String? initialNotes;
+  final String? initialPartName;
+  final String? initialPartNumber;
+  final String? initialBrand;
 
   @override
   ConsumerState<MaintenanceFormScreen> createState() =>
@@ -94,6 +103,7 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
   List<AttachmentInfo> _existingAttachments = const [];
   final Set<int> _keptAttachmentIds = {};
   bool _loadedEdit = false;
+  bool _syncWithCvt = true;
 
   @override
   void initState() {
@@ -104,6 +114,20 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
     }
     if (widget.initialOdometerKm != null) {
       _odometer.text = '${widget.initialOdometerKm}';
+    }
+    if (widget.initialNotes != null && widget.initialNotes!.isNotEmpty) {
+      _notes.text = widget.initialNotes!;
+    }
+    if (widget.initialPartName != null &&
+        widget.initialPartName!.trim().isNotEmpty) {
+      _parts.add(
+        _PartDraft(
+          name: widget.initialPartName!.trim(),
+          partNumber: widget.initialPartNumber?.trim() ?? '',
+          brand: widget.initialBrand?.trim() ?? 'Honda Genuine OEM',
+          trackInstallation: true,
+        ),
+      );
     }
     _date = AppDates.todayManila(ref.read(clockProvider)());
     _laborPesos.addListener(_recomputeTotal);
@@ -272,6 +296,58 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
     if (!mounted) return;
     if (err == null) {
       ref.invalidate(componentMeasurementsProvider);
+      ref.invalidate(activeCvtConfigurationProvider);
+      ref.invalidate(cvtConfigurationsProvider);
+
+      if (_syncWithCvt && selectedItem != null) {
+        final isCvt = selectedItem.name.toLowerCase().contains('cvt') ||
+            selectedItem.name.toLowerCase().contains('belt') ||
+            selectedItem.name.toLowerCase().contains('clutch');
+        if (isCvt) {
+          try {
+            final activeConfig =
+                await ref.read(activeCvtConfigurationProvider.future);
+            if (activeConfig != null) {
+              final odo =
+                  int.tryParse(_odometer.text.replaceAll(',', '').trim());
+              final beltPart = _parts.where((p) {
+                final n = p.name.text.toLowerCase();
+                final pn = p.partNumber.text.toLowerCase();
+                return n.contains('belt') || pn.contains('23100');
+              }).firstOrNull;
+
+              final updatedBelt = (beltPart != null &&
+                      beltPart.partNumber.text.trim().isNotEmpty)
+                  ? beltPart.partNumber.text.trim()
+                  : activeConfig.beltBrandPartNumber;
+
+              await ref.read(cvtRepositoryProvider).updateConfiguration(
+                    id: activeConfig.id,
+                    name: activeConfig.name,
+                    pulleyBrandModel: activeConfig.pulleyBrandModel,
+                    flyballWeightGrams: activeConfig.flyballWeightGrams,
+                    flyballArrangement: activeConfig.flyballArrangement,
+                    centerSpringRpm: activeConfig.centerSpringRpm,
+                    clutchSpringRpm: activeConfig.clutchSpringRpm,
+                    beltBrandPartNumber: updatedBelt,
+                    pulleyWasherThicknessMm:
+                        activeConfig.pulleyWasherThicknessMm,
+                    clutchBellSpec: activeConfig.clutchBellSpec,
+                    exhaustSpec: activeConfig.exhaustSpec,
+                    otherMods: activeConfig.otherMods,
+                    installedDate: _date,
+                    installedOdometerKm:
+                        odo ?? activeConfig.installedOdometerKm,
+                    notes: activeConfig.notes,
+                  );
+              ref.invalidate(activeCvtConfigurationProvider);
+              ref.invalidate(cvtConfigurationsProvider);
+            }
+          } catch (_) {}
+        }
+      }
+
+      if (!mounted) return;
       if (context.canPop()) context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
@@ -323,6 +399,10 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
           if (needsPosition && _measurementPosition == null) {
             _measurementPosition = ComponentPosition.front.code;
           }
+          final isCvtItem = selectedItem != null &&
+              (selectedItem.name.toLowerCase().contains('cvt') ||
+                  selectedItem.name.toLowerCase().contains('belt') ||
+                  selectedItem.name.toLowerCase().contains('clutch'));
 
           return Form(
             key: _formKey,
@@ -524,6 +604,22 @@ class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(labelText: 'Notes'),
                 ),
+                if (isCvtItem)
+                  Card(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withOpacity(0.3),
+                    margin: const EdgeInsets.only(top: 12),
+                    child: SwitchListTile(
+                      secondary: const Icon(Icons.tune),
+                      title: const Text('Sync with Active CVT Setup'),
+                      subtitle: const Text(
+                          'Updates installation odometer & belt spec on your active CVT configuration'),
+                      value: _syncWithCvt,
+                      onChanged: (val) => setState(() => _syncWithCvt = val),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 PhotoAttachmentsSection(
                   newPaths: _newPhotos,

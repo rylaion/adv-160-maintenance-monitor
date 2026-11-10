@@ -53,4 +53,5 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/parts_catalog/adv160_2023/diagrams/
+    - assets/images/parts_catalog/adv160_2023/pages/
     - assets/data/

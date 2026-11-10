@@ -96,6 +96,10 @@ class _PartCatalogDetailScreenState
                   MaterialPageRoute(
                     builder: (_) => ExplodedDiagramViewerScreen(
                       initialDiagramCode: p.diagramNumber!,
+                      initialPartId: p.id,
+                      initialPartNumber: p.partNumber,
+                      initialPartName: p.officialName,
+                      initialRefNo: p.referenceNumber,
                     ),
                   ),
                 );
@@ -232,6 +236,10 @@ class _PartCatalogDetailScreenState
                           MaterialPageRoute(
                             builder: (_) => ExplodedDiagramViewerScreen(
                               initialDiagramCode: p.diagramNumber!,
+                              initialPartId: p.id,
+                              initialPartNumber: p.partNumber,
+                              initialPartName: p.officialName,
+                              initialRefNo: p.referenceNumber,
                             ),
                           ),
                         );

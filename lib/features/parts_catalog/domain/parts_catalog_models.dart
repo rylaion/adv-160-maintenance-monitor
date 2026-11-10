@@ -136,4 +136,56 @@ class PartsCatalogDiagramInfo {
       imageAssetPath: row.imageAssetPath,
     );
   }
+
+  int? get printedPageNumber {
+    final m = RegExp(r'Printed p\.\s*(\d+)').firstMatch(description ?? '');
+    if (m != null) return int.tryParse(m.group(1)!);
+    final mAsset = RegExp(r'page_(\d+)\.webp').firstMatch(imageAssetPath ?? '');
+    if (mAsset != null) return int.tryParse(mAsset.group(1)!);
+    return null;
+  }
+
+  int? get pdfPageNumber {
+    final m = RegExp(r'PDF p\.\s*(\d+)').firstMatch(description ?? '');
+    if (m != null) return int.tryParse(m.group(1)!);
+    final printed = printedPageNumber;
+    return printed != null ? printed + 3 : null;
+  }
+
+  String get catalogueRevision {
+    final m = RegExp(r'Catalogue\s+([A-Z0-9]+)').firstMatch(description ?? '');
+    return m != null ? m.group(1)! : '18K0WP01';
+  }
+
+  int get pageCount {
+    switch (diagramCode) {
+      case 'E-19-20':
+        return 3;
+      case 'E-3':
+      case 'E-4':
+      case 'E-17':
+      case 'E-19-10':
+      case 'F-12':
+      case 'F-13':
+      case 'F-14':
+      case 'F-15':
+      case 'F-22-40':
+      case 'F-24':
+      case 'F-41':
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
+  /// List of all page asset paths for this diagram block.
+  List<String> get pageAssetPaths {
+    final start = printedPageNumber;
+    if (start == null) return [imageAssetPath ?? ''];
+    return List.generate(
+      pageCount,
+      (idx) =>
+          'assets/images/parts_catalog/adv160_2023/pages/page_${(start + idx).toString().padLeft(3, '0')}.webp',
+    );
+  }
 }

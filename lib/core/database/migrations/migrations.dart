@@ -222,6 +222,13 @@ Future<void> runMigrations(
       await m.createTable(db.savedRoutes);
     }
   }
+
+  // v10: safe in-place catalogue update to synchronize official Honda 18K0WP01
+  // diagrams and part mappings without altering user records, maintenance logs,
+  // odometer logs, custom rules, or CVT logs.
+  if (from < 10 && to >= 10) {
+    await HondaPartsSeed(db).forceSyncCatalogue();
+  }
 }
 
 Future<Set<String>> _columnNames(AppDatabase db, String table) async {

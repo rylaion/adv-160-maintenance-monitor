@@ -110,7 +110,7 @@ void main() {
       final f10 = diagrams.firstWhere((d) => d.diagramCode == 'F-10');
       expect(f10.title, contains('STEERING STEM'));
       expect(f10.imageAssetPath,
-          'assets/images/parts_catalog/adv160_2023/diagrams/F-10.png');
+          'assets/images/parts_catalog/adv160_2023/pages/page_059.webp');
 
       final f10Parts = await repo.getPartsForDiagram('F-10');
       expect(f10Parts.isNotEmpty, isTrue);
@@ -123,7 +123,7 @@ void main() {
       final f20 = diagrams.firstWhere((d) => d.diagramCode == 'F-20-40');
       expect(f20.title, contains('FRONT WHEEL'));
       expect(f20.imageAssetPath,
-          'assets/images/parts_catalog/adv160_2023/diagrams/F-20-40.png');
+          'assets/images/parts_catalog/adv160_2023/pages/page_073.webp');
 
       final f20Parts = await repo.getPartsForDiagram('F-20-40');
       expect(f20Parts.isNotEmpty, isTrue);
@@ -131,6 +131,37 @@ void main() {
           f20Parts.any((p) => p.partNumber == '45351-K0W-N01'), isTrue); // Disk
       expect(
           f20Parts.any((p) => p.partNumber == '44711-K0W-N01'), isTrue); // Tire
+
+      // Verify Rear Brake diagrams map to authentic rear brake page images (Not Steering Stem / T-Post)
+      final f6 = diagrams.firstWhere((d) => d.diagramCode == 'F-6');
+      expect(f6.title, 'REAR BRAKE MASTER CYLINDER');
+      expect(f6.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/pages/page_056.webp');
+
+      final f7 = diagrams.firstWhere((d) => d.diagramCode == 'F-7-10');
+      expect(f7.title, 'REAR BRAKE PIPE');
+      expect(f7.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/pages/page_057.webp');
+
+      final f21 = diagrams.firstWhere((d) => d.diagramCode == 'F-21');
+      expect(f21.title, 'REAR BRAKE CALIPER');
+      expect(f21.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/pages/page_074.webp');
+
+      // Verify Front Shock (Front Fork) and Front Brake
+      final f17 = diagrams.firstWhere((d) => d.diagramCode == 'F-17');
+      expect(f17.title, 'FRONT FORK');
+      expect(f17.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/pages/page_071.webp');
+
+      final f18 = diagrams.firstWhere((d) => d.diagramCode == 'F-18');
+      expect(f18.title, 'FRONT BRAKE CALIPER');
+      expect(f18.imageAssetPath,
+          'assets/images/parts_catalog/adv160_2023/pages/page_072.webp');
+
+      // Verify official catalogue ordering (E-2 first, F-48 last)
+      expect(diagrams.first.diagramCode, 'E-2');
+      expect(diagrams.last.diagramCode, 'F-48');
     });
 
     test(

@@ -2,12 +2,12 @@
 library;
 
 const String kAppName = 'ADV-MON';
-const String kAppVersion = '0.3.0+4';
+const String kAppVersion = '0.3.1+5';
 const String kDatabaseFileName = 'adv_mon.sqlite';
 
 /// Increment when the schema changes and add a step in
 /// `core/database/migrations/migrations.dart`.
-const int kDatabaseSchemaVersion = 9;
+const int kDatabaseSchemaVersion = 10;
 
 /// Local time zone used for display and reminder scheduling.
 const String kAppTimeZone = 'Asia/Manila';

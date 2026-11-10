@@ -1,447 +1,606 @@
 {
-  "metadata": {
+  "catalogue_info": {
+    "model": "Honda ADV 160 (ADV160AP)",
+    "market": "Philippines (2PH)",
     "catalogue_code": "18K0WP01",
-    "model": "ADV160A / ADV160AP",
-    "model_code": "2PH",
-    "market": "Philippines",
     "issue_date": "2022-08-20",
-    "source_document": "ADV160_18K0WP01_0.pdf",
     "total_diagrams": 54,
-    "total_part_entries": 696,
-    "total_unique_part_numbers": 636
+    "total_parts": 696
   },
   "diagrams": [
     {
       "diagram_code": "E-2",
       "title": "CYLINDER HEAD COVER",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 31",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-2.png",
-      "pdf_start_page": 31
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 31 | Printed p. 28",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_028.webp",
+      "pdf_start_page": 31,
+      "printed_start_page": 28,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-3",
       "title": "CYLINDER HEAD",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 32",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-3.png",
-      "pdf_start_page": 32
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 32 | Printed p. 29",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_029.webp",
+      "pdf_start_page": 32,
+      "printed_start_page": 29,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-4",
       "title": "CAMSHAFT/VALVE",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 34",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-4.png",
-      "pdf_start_page": 34
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 34 | Printed p. 31",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_031.webp",
+      "pdf_start_page": 34,
+      "printed_start_page": 31,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-5",
       "title": "CAM CHAIN/TENSIONER",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 36",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-5.png",
-      "pdf_start_page": 36
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 36 | Printed p. 33",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_033.webp",
+      "pdf_start_page": 36,
+      "printed_start_page": 33,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-6",
       "title": "CYLINDER",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 37",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-6.png",
-      "pdf_start_page": 37
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 37 | Printed p. 34",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_034.webp",
+      "pdf_start_page": 37,
+      "printed_start_page": 34,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-9",
       "title": "WATER PUMP",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 38",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-9.png",
-      "pdf_start_page": 38
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 38 | Printed p. 35",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_035.webp",
+      "pdf_start_page": 38,
+      "printed_start_page": 35,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-10",
       "title": "A.C.G. STARTER",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 39",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-10.png",
-      "pdf_start_page": 39
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 39 | Printed p. 36",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_036.webp",
+      "pdf_start_page": 39,
+      "printed_start_page": 36,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-11",
       "title": "OIL PUMP",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 40",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-11.png",
-      "pdf_start_page": 40
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 40 | Printed p. 37",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_037.webp",
+      "pdf_start_page": 40,
+      "printed_start_page": 37,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-13",
       "title": "LEFT SIDE COVER",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 41",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-13.png",
-      "pdf_start_page": 41
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 41 | Printed p. 38",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_038.webp",
+      "pdf_start_page": 41,
+      "printed_start_page": 38,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-14",
       "title": "RADIATOR",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 42",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-14.png",
-      "pdf_start_page": 42
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 42 | Printed p. 39",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_039.webp",
+      "pdf_start_page": 42,
+      "printed_start_page": 39,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-16",
       "title": "DRIVE FACE",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 43",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-16.png",
-      "pdf_start_page": 43
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 43 | Printed p. 40",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_040.webp",
+      "pdf_start_page": 43,
+      "printed_start_page": 40,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-17",
       "title": "DRIVEN FACE",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 44",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-17.png",
-      "pdf_start_page": 44
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 44 | Printed p. 41",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_041.webp",
+      "pdf_start_page": 44,
+      "printed_start_page": 41,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-17-10",
       "title": "TRANSMISSION",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 46",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-17-10.png",
-      "pdf_start_page": 46
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 46 | Printed p. 43",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_043.webp",
+      "pdf_start_page": 46,
+      "printed_start_page": 43,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-19-10",
       "title": "RIGHT CRANKCASE",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 47",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-19-10.png",
-      "pdf_start_page": 47
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 47 | Printed p. 44",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_044.webp",
+      "pdf_start_page": 47,
+      "printed_start_page": 44,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-19-20",
       "title": "LEFT CRANKCASE",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 49",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-19-20.png",
-      "pdf_start_page": 49
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 49 | Printed p. 46",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_046.webp",
+      "pdf_start_page": 49,
+      "printed_start_page": 46,
+      "page_count": 3,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-20",
       "title": "CRANKSHAFT/PISTON",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 52",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-20.png",
-      "pdf_start_page": 52
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 52 | Printed p. 49",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_049.webp",
+      "pdf_start_page": 52,
+      "printed_start_page": 49,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "E-22",
       "title": "THROTTLE BODY/FUEL INJECTOR",
       "assembly_name": "ENGINE GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 53",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/E-22.png",
-      "pdf_start_page": 53
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 53 | Printed p. 50",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_050.webp",
+      "pdf_start_page": 53,
+      "printed_start_page": 50,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-1",
       "title": "HEADLIGHT",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 54",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-1.png",
-      "pdf_start_page": 54
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 54 | Printed p. 51",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_051.webp",
+      "pdf_start_page": 54,
+      "printed_start_page": 51,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-2",
       "title": "METER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 55",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-2.png",
-      "pdf_start_page": 55
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 55 | Printed p. 52",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_052.webp",
+      "pdf_start_page": 55,
+      "printed_start_page": 52,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-3",
       "title": "MIRROR",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 56",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-3.png",
-      "pdf_start_page": 56
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 56 | Printed p. 53",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_053.webp",
+      "pdf_start_page": 56,
+      "printed_start_page": 53,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-4",
       "title": "HANDLE SWITCH/CABLE",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 57",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-4.png",
-      "pdf_start_page": 57
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 57 | Printed p. 54",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_054.webp",
+      "pdf_start_page": 57,
+      "printed_start_page": 54,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-5-20",
       "title": "FRONT BRAKE MASTER CYLINDER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 58",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-5-20.png",
-      "pdf_start_page": 58
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 58 | Printed p. 55",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_055.webp",
+      "pdf_start_page": 58,
+      "printed_start_page": 55,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-6",
       "title": "REAR BRAKE MASTER CYLINDER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 59",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-6.png",
-      "pdf_start_page": 59
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 59 | Printed p. 56",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_056.webp",
+      "pdf_start_page": 59,
+      "printed_start_page": 56,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-7-10",
       "title": "REAR BRAKE PIPE",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 60",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-7-10.png",
-      "pdf_start_page": 60
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 60 | Printed p. 57",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_057.webp",
+      "pdf_start_page": 60,
+      "printed_start_page": 57,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-9",
       "title": "HANDLE PIPE/HANDLE COVER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 61",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-9.png",
-      "pdf_start_page": 61
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 61 | Printed p. 58",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_058.webp",
+      "pdf_start_page": 61,
+      "printed_start_page": 58,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-10",
       "title": "STEERING STEM",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 62",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-10.png",
-      "pdf_start_page": 62
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 62 | Printed p. 59",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_059.webp",
+      "pdf_start_page": 62,
+      "printed_start_page": 59,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-11",
       "title": "FRONT FENDER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 63",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-11.png",
-      "pdf_start_page": 63
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 63 | Printed p. 60",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_060.webp",
+      "pdf_start_page": 63,
+      "printed_start_page": 60,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-12",
       "title": "FRONT COVER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 64",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-12.png",
-      "pdf_start_page": 64
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 64 | Printed p. 61",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_061.webp",
+      "pdf_start_page": 64,
+      "printed_start_page": 61,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-13",
       "title": "INNER COVER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 66",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-13.png",
-      "pdf_start_page": 66
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 66 | Printed p. 63",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_063.webp",
+      "pdf_start_page": 66,
+      "printed_start_page": 63,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-14",
       "title": "FLOOR STEP",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 68",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-14.png",
-      "pdf_start_page": 68
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 68 | Printed p. 65",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_065.webp",
+      "pdf_start_page": 68,
+      "printed_start_page": 65,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-14-10",
       "title": "PILLION STEP",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 70",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-14-10.png",
-      "pdf_start_page": 70
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 70 | Printed p. 67",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_067.webp",
+      "pdf_start_page": 70,
+      "printed_start_page": 67,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-15",
       "title": "BODY COVER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 71",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-15.png",
-      "pdf_start_page": 71
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 71 | Printed p. 68",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_068.webp",
+      "pdf_start_page": 71,
+      "printed_start_page": 68,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-16",
       "title": "LUGGAGE BOX",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 73",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-16.png",
-      "pdf_start_page": 73
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 73 | Printed p. 70",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_070.webp",
+      "pdf_start_page": 73,
+      "printed_start_page": 70,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-17",
       "title": "FRONT FORK",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 74",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-17.png",
-      "pdf_start_page": 74
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 74 | Printed p. 71",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_071.webp",
+      "pdf_start_page": 74,
+      "printed_start_page": 71,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-18",
       "title": "FRONT BRAKE CALIPER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 75",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-18.png",
-      "pdf_start_page": 75
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 75 | Printed p. 72",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_072.webp",
+      "pdf_start_page": 75,
+      "printed_start_page": 72,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-20-40",
       "title": "FRONT WHEEL",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 76",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-20-40.png",
-      "pdf_start_page": 76
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 76 | Printed p. 73",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_073.webp",
+      "pdf_start_page": 76,
+      "printed_start_page": 73,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-21",
       "title": "REAR BRAKE CALIPER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 77",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-21.png",
-      "pdf_start_page": 77
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 77 | Printed p. 74",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_074.webp",
+      "pdf_start_page": 77,
+      "printed_start_page": 74,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-22-40",
       "title": "REAR WHEEL/SWINGARM",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 78",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-22-40.png",
-      "pdf_start_page": 78
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 78 | Printed p. 75",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_075.webp",
+      "pdf_start_page": 78,
+      "printed_start_page": 75,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-24",
       "title": "SEAT",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 80",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-24.png",
-      "pdf_start_page": 80
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 80 | Printed p. 77",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_077.webp",
+      "pdf_start_page": 80,
+      "printed_start_page": 77,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-26",
       "title": "FUEL TANK",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 82",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-26.png",
-      "pdf_start_page": 82
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 82 | Printed p. 79",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_079.webp",
+      "pdf_start_page": 82,
+      "printed_start_page": 79,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-28",
       "title": "AIR CLEANER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 83",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-28.png",
-      "pdf_start_page": 83
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 83 | Printed p. 80",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_080.webp",
+      "pdf_start_page": 83,
+      "printed_start_page": 80,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-30",
       "title": "EXHAUST MUFFLER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 84",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-30.png",
-      "pdf_start_page": 84
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 84 | Printed p. 81",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_081.webp",
+      "pdf_start_page": 84,
+      "printed_start_page": 81,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-35",
       "title": "STAND",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 85",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-35.png",
-      "pdf_start_page": 85
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 85 | Printed p. 82",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_082.webp",
+      "pdf_start_page": 85,
+      "printed_start_page": 82,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-36",
       "title": "REAR CUSHION",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 86",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-36.png",
-      "pdf_start_page": 86
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 86 | Printed p. 83",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_083.webp",
+      "pdf_start_page": 86,
+      "printed_start_page": 83,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-37",
       "title": "WINKER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 87",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-37.png",
-      "pdf_start_page": 87
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 87 | Printed p. 84",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_084.webp",
+      "pdf_start_page": 87,
+      "printed_start_page": 84,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-38",
       "title": "TAILLIGHT",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 88",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-38.png",
-      "pdf_start_page": 88
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 88 | Printed p. 85",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_085.webp",
+      "pdf_start_page": 88,
+      "printed_start_page": 85,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-39",
       "title": "REAR FENDER",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 89",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-39.png",
-      "pdf_start_page": 89
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 89 | Printed p. 86",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_086.webp",
+      "pdf_start_page": 89,
+      "printed_start_page": 86,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-40",
       "title": "BATTERY",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 90",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-40.png",
-      "pdf_start_page": 90
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 90 | Printed p. 87",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_087.webp",
+      "pdf_start_page": 90,
+      "printed_start_page": 87,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-41",
       "title": "WIRE HARNESS/FOB KEY",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 91",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-41.png",
-      "pdf_start_page": 91
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 91 | Printed p. 88",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_088.webp",
+      "pdf_start_page": 91,
+      "printed_start_page": 88,
+      "page_count": 2,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-42",
       "title": "FRAME BODY",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 93",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-42.png",
-      "pdf_start_page": 93
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 93 | Printed p. 90",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_090.webp",
+      "pdf_start_page": 93,
+      "printed_start_page": 90,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-43",
       "title": "RESERVE TANK",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 94",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-43.png",
-      "pdf_start_page": 94
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 94 | Printed p. 91",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_091.webp",
+      "pdf_start_page": 94,
+      "printed_start_page": 91,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-46",
       "title": "TOOLS",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 95",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-46.png",
-      "pdf_start_page": 95
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 95 | Printed p. 92",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_092.webp",
+      "pdf_start_page": 95,
+      "printed_start_page": 92,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-47",
       "title": "CAUTION LABEL",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 96",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-47.png",
-      "pdf_start_page": 96
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 96 | Printed p. 93",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_093.webp",
+      "pdf_start_page": 96,
+      "printed_start_page": 93,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     },
     {
       "diagram_code": "F-48",
       "title": "MARK/EMBLEM",
       "assembly_name": "FRAME GROUP",
-      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) p. 97",
-      "image_asset_path": "assets/images/parts_catalog/adv160_2023/diagrams/F-48.png",
-      "pdf_start_page": 97
+      "description": "Official Honda Parts Catalogue 18K0WP01 (ADV160AP, PH) | PDF p. 97 | Printed p. 94",
+      "image_asset_path": "assets/images/parts_catalog/adv160_2023/pages/page_094.webp",
+      "pdf_start_page": 97,
+      "printed_start_page": 94,
+      "page_count": 1,
+      "catalogue_revision": "18K0WP01 (2022.08.20)"
     }
   ],
   "parts": [
@@ -867,7 +1026,7 @@
     },
     {
       "part_number": "90012-KYY-900",
-      "official_name": "OEM Part 90012-KYY-900",
+      "official_name": "SCREW, TAPPET ADJUSTING",
       "ref_no": 14,
       "standard_quantity": 4,
       "category": "Engine",
@@ -927,7 +1086,7 @@
     },
     {
       "part_number": "14401-K97-T01",
-      "official_name": "OEM Part 14401-K97-T01",
+      "official_name": "CHAIN, CAM (DID SCZ-0404 SV-92LE)",
       "ref_no": 1,
       "standard_quantity": 1,
       "category": "Engine",
@@ -1023,7 +1182,7 @@
     },
     {
       "part_number": "14611-K97-T00",
-      "official_name": "OEM Part 14611-K97-T00",
+      "official_name": "GUIDE, CAM CHAIN",
       "ref_no": 7,
       "standard_quantity": 1,
       "category": "Engine",
@@ -1311,7 +1470,7 @@
     },
     {
       "part_number": "15100-K1Z-N20",
-      "official_name": "OEM Part 15100-K1Z-N20",
+      "official_name": "PUMP ASSY, OIL",
       "ref_no": 2,
       "standard_quantity": 1,
       "category": "Engine",
@@ -1395,7 +1554,7 @@
     },
     {
       "part_number": "19416-KEY-900",
-      "official_name": "OEM Part 19416-KEY-900",
+      "official_name": "COLLAR",
       "ref_no": 3,
       "standard_quantity": 3,
       "category": "Engine",
@@ -1815,7 +1974,7 @@
     },
     {
       "part_number": "91203-K35-V01",
-      "official_name": "OEM Part 91203-K35-V01",
+      "official_name": "OIL SEAL, 24X31X35",
       "ref_no": 9,
       "standard_quantity": 1,
       "category": "CVT / Transmission",
@@ -1851,7 +2010,7 @@
     },
     {
       "part_number": "22350-K97-T01",
-      "official_name": "OEM Part 22350-K97-T01",
+      "official_name": "PLATE COMP, DRIVE",
       "ref_no": 2,
       "standard_quantity": 1,
       "category": "CVT / Transmission",
@@ -1863,7 +2022,7 @@
     },
     {
       "part_number": "22350-KVB-900",
-      "official_name": "OEM Part 22350-KVB-900",
+      "official_name": "PLATE COMP, DRIVE",
       "ref_no": 2,
       "standard_quantity": 1,
       "category": "CVT / Transmission",
@@ -1887,7 +2046,7 @@
     },
     {
       "part_number": "22361-KVB-900",
-      "official_name": "OEM Part 22361-KVB-900",
+      "official_name": "PLATE, CLUTCH SIDE",
       "ref_no": 3,
       "standard_quantity": 1,
       "category": "CVT / Transmission",
@@ -2091,7 +2250,7 @@
     },
     {
       "part_number": "91009-K93-T01",
-      "official_name": "OEM Part 91009-K93-T01",
+      "official_name": "BEARING, RADIAL BALL, 6902U (FCC)",
       "ref_no": 18,
       "standard_quantity": 1,
       "category": "CVT / Transmission",
@@ -2163,7 +2322,7 @@
     },
     {
       "part_number": "91211-KN7-671",
-      "official_name": "OEM Part 91211-KN7-671",
+      "official_name": "SEAL, DRIVEN FACE, 34X41X4",
       "ref_no": 20,
       "standard_quantity": 2,
       "category": "CVT / Transmission",
@@ -2439,7 +2598,7 @@
     },
     {
       "part_number": "11216-GGC-900",
-      "official_name": "OEM Part 11216-GGC-900",
+      "official_name": "BUSH, ENGINE HANGER RUBBER",
       "ref_no": 2,
       "standard_quantity": 1,
       "category": "Engine",
@@ -2463,7 +2622,7 @@
     },
     {
       "part_number": "11205-K0J-N00",
-      "official_name": "OEM Part 11205-K0J-N00",
+      "official_name": "BUSH, MAIN STAND",
       "ref_no": 3,
       "standard_quantity": 1,
       "category": "Engine",
@@ -2751,7 +2910,7 @@
     },
     {
       "part_number": "11205-K0J-N00",
-      "official_name": "OEM Part 11205-K0J-N00",
+      "official_name": "BUSH, MAIN STAND",
       "ref_no": 4,
       "standard_quantity": 1,
       "category": "Engine",
@@ -4455,7 +4614,7 @@
     },
     {
       "part_number": "90191-KWB-600",
-      "official_name": "OEM Part 90191-KWB-600",
+      "official_name": "SCREW, OVAL, 6X45",
       "ref_no": 10,
       "standard_quantity": 2,
       "category": "Frame & Chassis",
@@ -6082,7 +6241,7 @@
       "assembly_name": "FRONT WHEEL",
       "diagram_number": "F-20-40",
       "page": 76,
-      "suggested_maintenance_item": "Wheels/Tyres",
+      "suggested_maintenance_item": null,
       "remarks": "Genuine Honda OEM Part (44711-K0W-N01) for ADV160AP. Diagram F-20-40 Ref #8."
     },
     {
@@ -6135,7 +6294,7 @@
     },
     {
       "part_number": "90131-KPB-751",
-      "official_name": "OEM Part 90131-KPB-751",
+      "official_name": "BOLT, TORX, 5X10",
       "ref_no": 12,
       "standard_quantity": 3,
       "category": "Tires / Wheels",
@@ -6418,7 +6577,7 @@
       "assembly_name": "REAR WHEEL/SWINGARM",
       "diagram_number": "F-22-40",
       "page": 78,
-      "suggested_maintenance_item": "Wheels/Tyres",
+      "suggested_maintenance_item": null,
       "remarks": "Genuine Honda OEM Part (42711-K0W-N01) for ADV160AP. Diagram F-22-40 Ref #5."
     },
     {

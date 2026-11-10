@@ -374,11 +374,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
             const SizedBox(height: 20),
-            const Card(
+            Card(
               child: ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('$kAppName – Honda ADV 160 Maintenance Monitor'),
-                subtitle: Text(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/icons/app_icon.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.info_outline),
+                  ),
+                ),
+                title:
+                    const Text('$kAppName – Honda ADV 160 Maintenance Monitor'),
+                subtitle: const Text(
                   'Version $kAppVersion · Database schema v$kDatabaseSchemaVersion · '
                   'Timezone $kAppTimeZone · 100% Offline',
                 ),

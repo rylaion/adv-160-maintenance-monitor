@@ -2,7 +2,7 @@
 library;
 
 const String kAppName = 'ADV-MON';
-const String kAppVersion = '0.2.0+2';
+const String kAppVersion = '0.2.1+3';
 const String kDatabaseFileName = 'adv_mon.sqlite';
 
 /// Increment when the schema changes and add a step in

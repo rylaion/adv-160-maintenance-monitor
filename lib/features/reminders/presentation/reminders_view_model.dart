@@ -66,9 +66,6 @@ class RemindersActions extends AsyncNotifier<void> {
   Future<String?> dismiss(int id) =>
       _run(() => ref.read(remindersRepositoryProvider).dismissReminder(id));
 
-  Future<String?> syncNow() =>
-      _run(() => ref.read(remindersRepositoryProvider).syncReminders());
-
   Future<String?> _run(Future<void> Function() body) async {
     state = const AsyncLoading();
     try {

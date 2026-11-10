@@ -87,12 +87,6 @@ class MaintenanceOverview {
       i.evaluation.checkpoints
           .any((c) => c.status == MaintenanceStatus.upcoming)));
 
-  /// Combined Due + Upcoming list for compatibility.
-  List<ItemStatus> get dueSoon => _sorted(scheduled.where((i) =>
-      i.evaluation.status == MaintenanceStatus.due ||
-      i.evaluation.status == MaintenanceStatus.upcoming ||
-      i.evaluation.status == MaintenanceStatus.inspectionRequired));
-
   /// Items that have at least one completed maintenance record.
   List<ItemStatus> get completedItems =>
       items.where((i) => i.evaluation.lastService != null).toList();

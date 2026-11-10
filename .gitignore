@@ -45,6 +45,9 @@ app.*.map.json
 # Local test-only native library (see README)
 /sqlite3.dll
 
+# Release APK copies placed in the project root
+/ADV-MON-*.apk
+
 # Flutter / Dart
 .dart_tool/
 .packages

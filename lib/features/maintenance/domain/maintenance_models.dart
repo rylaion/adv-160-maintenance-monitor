@@ -187,17 +187,6 @@ class RuleEvaluation {
 
   /// Individual checkpoint evaluations for the Odometer-Based Inspection Guide.
   final List<CheckpointEvaluation> checkpoints;
-
-  /// Any checkpoint at or above the current odometer that is UPCOMING, even if
-  /// an earlier checkpoint was skipped and remains OVERDUE.
-  CheckpointEvaluation? get upcomingCheckpoint => checkpoints
-      .where((c) => c.status == MaintenanceStatus.upcoming)
-      .firstOrNull;
-
-  /// Most recently completed checkpoint for this rule.
-  CheckpointEvaluation? get lastCompletedCheckpoint => checkpoints
-      .where((c) => c.status == MaintenanceStatus.completed)
-      .lastOrNull;
 }
 
 /// Combined result for one maintenance item.
@@ -242,8 +231,4 @@ class ItemEvaluation {
     });
     return list;
   }
-
-  /// True when a maintenance record confirms that a scheduled task for this
-  /// item was completed.
-  bool get hasCompletedRecord => lastService != null;
 }

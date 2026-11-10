@@ -236,11 +236,6 @@ class MaintenanceRepository {
     }
   }
 
-  Future<MaintenanceRecordDetail?> findRecord(int id) async {
-    final all = await loadHistory();
-    return all.where((r) => r.id == id).firstOrNull;
-  }
-
   Future<List<MaintenanceRecordDetail>> loadHistory() async {
     final cats = {
       for (final c in await _db.select(_db.maintenanceCategories).get())
